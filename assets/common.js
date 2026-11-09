@@ -3,6 +3,11 @@ const APPS=[
  {id:'hello',name:'见面打招呼',category:'动作互动',icon:'\uf4a2',color:'hello',english:'HELLO, LITTLE ONE',headline:'第一次见面，\n先打个招呼。',desc:'用一个小动作回应彼此，让每一次见面都有一点新鲜感。',needs:'基础动作',version:'0.1.0',motions:['点头','摇头','招呼']},
  {id:'game',name:'默契挑战',category:'互动游戏',icon:'\uf11b',color:'game',english:'BETTER TOGETHER',headline:'看看我们，\n有多默契。',desc:'观察小恐龙刚刚做了什么，选出正确答案，开始一轮默契挑战。',needs:'基础动作',version:'0.1.0',motions:['点头','摇头','招呼']}
 ];
+const ROBOT_SOCIAL_PLAYS=[
+{id:'spot',name:'光斑追踪',category:'互动游戏',icon:'\uf0eb',color:'game',english:'FOLLOW THE LIGHT',headline:'光斑去哪，\n小恐龙跟到哪。',desc:'在地面移动光斑，看小恐龙一路跟过去。',needs:'视觉识别、移动控制',version:'0.1.0',motions:[]},
+{id:'focus',name:'专注搭子',category:'日常陪伴',icon:'\uf017',color:'hello',english:'STAY WITH YOU',headline:'你负责专注，\n我负责陪你。',desc:'放下手机，让小恐龙陪你完成一段专注时光。',needs:'摄像头、语音',version:'0.1.0',motions:[]}
+];
+const ROBOT_PLAYS=[...ROBOT_SOCIAL_PLAYS,APPS.find(app=>app.id==='game')];
 const ICONS={home:'\uf015',apps:'\uf00a',compass:'\uf14e',code:'\uf121',robot:'\uf544',play:'\uf04b',stop:'\uf04d',arrow:'\uf061',chevron:'\uf105',back:'\uf104',plus:'\uf067',close:'\uf00d',search:'\uf002',connect:'\uf1e6',settings:'\uf013',check:'\uf00c',refresh:'\uf2f1',download:'\uf019',signal:'\uf012',battery:'\uf240',user:'\uf007',log:'\uf120',sliders:'\uf1de',cube:'\uf1b2',external:'\uf35d',book:'\uf02d',head:'\uf118',hand:'\uf4a2',rotate:'\uf021',wifi:'\uf1eb',info:'\uf05a',eye:'\uf06e'};
 const icon=(key)=>`<span class="icon" aria-hidden="true">${ICONS[key]||key}</span>`;
 const esc=(s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
