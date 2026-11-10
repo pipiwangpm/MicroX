@@ -14,8 +14,8 @@ function installRobotPlay(id, name, refresh, storageKey = robotPlayStorage) {
     refresh();
     return;
   }
-  confirmDialog('安装到小恐龙', '小恐龙将下载并安装「' + esc(name) + '」。安装完成后即可启动。', '确认安装', () => {
-    modal('<h2 id="dialog-title">正在安装</h2><p role="status">小恐龙正在下载并安装玩法…</p><progress aria-label="安装进度"></progress>');
+  confirmDialog('安装到 RayDino', 'RayDino 将下载并安装「' + esc(name) + '」。安装完成后即可启动。', '确认安装', () => {
+    modal('<h2 id="dialog-title">正在安装</h2><p role="status">RayDino 正在下载并安装玩法…</p><progress aria-label="安装进度"></progress>');
     const progressDialog = document.querySelector('.modal-wrap');
     setTimeout(() => {
       if (!progressDialog.isConnected) return;
@@ -28,7 +28,7 @@ function installRobotPlay(id, name, refresh, storageKey = robotPlayStorage) {
       current.installed = [...new Set([...current.installed, id])];
       writeStore(storageKey, current);
       refresh();
-      toast('已安装到小恐龙');
+      toast('已安装到 RayDino');
     }, 950);
   });
 }

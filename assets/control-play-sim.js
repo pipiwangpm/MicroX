@@ -1,13 +1,12 @@
 const simSession = {
-  running: false, output: '等待启动', events: [], light: '', position: 0, phone: false,
-  answer: null, motionIndex: 0, playing: false
+  running: false, output: '等待启动', events: [], light: '', position: 0, phone: false
 };
 
 function renderPlaySimulator() {
   const play = selectedApp;
   return pTitle('仿真调试', '', '<a class="btn" href="apps.html"><span>返回玩法</span></a>') + `
     <section class="control-panel play-simulator">
-      <header class="cp-head"><h2>运行配置</h2><span>虚拟 MicroX</span></header>
+      <header class="cp-head"><h2>运行配置</h2><span>虚拟 RayDino</span></header>
       <div class="sim-play-body">
         <label for="sim-play-picker">选择玩法</label>
         <select id="sim-play-picker" ${simSession.running?'disabled':''}>${APPS.map(a=>`<option value="${a.id}" ${a.id===play.id?'selected':''}>${a.name}</option>`).join('')}</select>
@@ -32,9 +31,8 @@ function simButton(label, action, disabled = !simSession.running) {
 }
 
 function simControls(id) {
-  if (id === 'spot') return `<p>移动光斑，观察小恐龙是否跟随。</p><div class="linkrow">${simButton('光斑移到左侧','left')}${simButton('光斑移到右侧','right')}${simButton('隐藏光斑','hide',!simSession.running||!simSession.light)}</div>`;
-  if (id === 'focus') return `<p>切换手机使用状态，查看专注提醒。</p><div class="linkrow">${simButton('拿起手机','phone-up',!simSession.running||simSession.phone)}${simButton('放下手机','phone-down',!simSession.running||!simSession.phone)}</div>`;
-  return `<p>播放一个动作，然后选出答案。</p><div class="linkrow">${simButton('播放动作','show-motion',!simSession.running||simSession.playing||simSession.answer!==null)}</div><div class="linkrow sim-answers">${selectedApp.motions.map((motion,i)=>simButton(motion,'answer-'+i,simSession.answer===null)).join('')}</div>`;
+  if (id === 'spot') return `<p>移动光斑，观察 RayDino 是否跟随。</p><div class="linkrow">${simButton('光斑移到左侧','left')}${simButton('光斑移到右侧','right')}${simButton('隐藏光斑','hide',!simSession.running||!simSession.light)}</div>`;
+  return `<p>切换手机使用状态，查看专注提醒。</p><div class="linkrow">${simButton('拿起手机','phone-up',!simSession.running||simSession.phone)}${simButton('放下手机','phone-down',!simSession.running||!simSession.phone)}</div>`;
 }
 
 function simReport(message) {
@@ -86,47 +84,32 @@ document.addEventListener('click', event => {
     if (simSession.running) return;
     simSession.running = true;
     simSession.light = selectedApp.id === 'spot' ? 'right' : '';
-    simReport(selectedApp.name + '已在虚拟 MicroX 启动。');
+    simReport(selectedApp.name + '已在虚拟 RayDino 启动。');
     return;
   }
   if (!simSession.running) return;
   if (action === 'stop') {
     stopAnimation();
-    Object.assign(simSession, {running:false, light:'', phone:false, answer:null, playing:false});
+    Object.assign(simSession, {running:false, light:'', phone:false});
     simReport('仿真已停止。');
     return;
   }
   if (action === 'left' || action === 'right') {
     simSession.light = action;
-    simReport('识别到' + (action==='left'?'左侧':'右侧') + '光斑，小恐龙正在跟随。');
+    simReport('识别到' + (action==='left'?'左侧':'右侧') + '光斑，RayDino 正在跟随。');
     return;
   }
   if (action === 'hide') {
     simSession.light = '';
-    simReport('光斑消失，小恐龙停止跟随。');
+    simReport('光斑消失，RayDino 停止跟随。');
     return;
   }
   if (action === 'phone-up' || action === 'phone-down') {
     simSession.phone = action === 'phone-up';
-    simReport(simSession.phone ? '检测到拿起手机，小恐龙发出专注提醒。' : '手机已放下，继续专注。');
+    simReport(simSession.phone ? '检测到拿起手机，RayDino 发出专注提醒。' : '手机已放下，继续专注。');
     return;
   }
-  if (action === 'show-motion' && !simSession.playing && simSession.answer === null) {
-    simSession.playing = true;
-    const answer = simSession.motionIndex++ % selectedApp.motions.length;
-    simReport('小恐龙正在播放动作。');
-    animate(selectedApp.motions[answer], () => {
-      simSession.playing = false;
-      simSession.answer = answer;
-      simReport('动作已播放，请选择答案。');
-    });
-    return;
-  }
-  if (action.startsWith('answer-') && simSession.answer !== null) {
-    const answer = simSession.answer;
-    simSession.answer = null;
-    simReport(Number(action.slice(7)) === answer ? '答对了！' : '刚才的动作是「' + selectedApp.motions[answer] + '」。');
-  }
+
 });
 
 window.addEventListener('pagehide', stopAnimation);

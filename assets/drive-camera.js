@@ -3,11 +3,11 @@ const driveCameraPose = {pan: 0, zoom: 1};
 
 function driveCameraPanel(connected, sleeping) {
   const active = connected && !sleeping && driveCameraOpen;
-  const message = !connected ? '连接小恐龙后查看画面' : sleeping ? '唤醒小恐龙后查看画面' : '打开摄像头后才能移动';
+  const message = !connected ? '连接 RayDino 后查看画面' : sleeping ? '唤醒 RayDino 后查看画面' : '打开摄像头后才能移动';
   return `
-    <section class="drive-camera" aria-label="小恐龙摄像头">
+    <section class="drive-camera" aria-label="RayDino 摄像头">
       <header class="drive-camera-header">
-        <div><h2>小恐龙摄像头</h2><span>前方视角 · 原型演示</span></div>
+        <div><h2>RayDino 摄像头</h2><span>前方视角 · 原型演示</span></div>
         ${connected && !sleeping ? `<button type="button" class="drive-camera-toggle" data-drive-camera><span>${active ? '关闭画面' : '打开画面'}</span></button>` : ''}
       </header>
       <div class="drive-camera-frame ${active ? 'is-previewing' : ''}">
