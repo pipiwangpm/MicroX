@@ -61,9 +61,8 @@
           <button type="button" class="enroll-action" disabled><span>获取验证码</span></button>
         </div>
         <button type="button" class="enroll-action enroll-primary" data-demo-account><span>${login ? '登录' : '注册并登录'}</span></button>
-      </div>
-      <p class="enroll-note enroll-foot">演示模式，可直接点击上方按钮进入。</p>`,
-      user ? '<a class="enroll-link" href="my.html">返回我的</a>' : '<a class="enroll-link" href="download.html">APK 下载</a>');
+      </div>`,
+      user ? '<a class="enroll-link" href="my.html">返回我的</a>' : '');
   }
 
   function enterApp() {
@@ -84,8 +83,8 @@
       </div>
       <p class="enroll-note enroll-scan-status" id="scan-status" role="status">正在打开摄像头…</p>
       <button class="enroll-action enroll-alt" id="retry-camera" hidden><span>重新打开摄像头</span></button>
-      <details class="enroll-demo"><summary>演示样例</summary>
-        <p class="enroll-note">可以模拟扫描，也可在另一台设备打开 <a class="enroll-link" href="../demo/raydino-pairing.png" target="_blank" rel="noopener">演示二维码</a>。</p>
+      <details class="enroll-demo"><summary>扫码样例</summary>
+        <p class="enroll-note"><a class="enroll-link" href="../demo/raydino-pairing.png" target="_blank" rel="noopener">打开样例二维码</a></p>
         <div class="enroll-options">${devices.map(device => `<button class="enroll-action" data-pair="${device.token}"><span>${device.name}</span></button>`).join('')}</div>
       </details>`;
   }
@@ -94,7 +93,7 @@
     const bluetooth = method === 'bluetooth';
     return `<p class="kicker">连接机器人</p><h1>${methods[method].title}</h1>
       <p class="intro">${bluetooth ? '打开手机蓝牙，并让 RayDino 进入配对状态。从列表中选择机器人。' : '在手机 Wi-Fi 设置中连接 RayDino 的热点，再返回选择对应热点。'}</p>
-      <div class="enroll-nearby-heading"><strong>${bluetooth ? '附近的机器人' : '机器人热点'}</strong><span>演示列表</span></div>
+      <div class="enroll-nearby-heading"><strong>${bluetooth ? '附近的机器人' : '机器人热点'}</strong></div>
       <div class="enroll-options">${devices.map(device => `<button class="enroll-choice" data-pair="${device.token}">
         ${icon(methods[method].icon)}<span><strong>${bluetooth ? device.name : device.hotspot}</strong><small>${bluetooth ? '可配对' : device.name}</small></span>${icon('chevron')}</button>`).join('')}</div>`;
   }
@@ -197,7 +196,7 @@
     } catch {
       if (version !== scannerVersion) return;
       stopScanner();
-      status.textContent = '无法开启摄像头。请检查浏览器权限，或打开下方演示样例。';
+      status.textContent = '摄像头无法开启，请检查浏览器权限。';
       retry.hidden = false;
     }
   }

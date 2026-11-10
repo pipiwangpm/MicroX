@@ -33,7 +33,7 @@
         <div class="ops-group">${icon('user')}<span>RaydiculousX 业务</span></div>
         <a href="?view=users" ${usersPage ? 'aria-current="page"' : ''}><span>用户管理</span></a>
       </nav>
-      <div class="ops-staff"><a href="../index.html"><span>返回原型总览</span>${icon('back')}</a></div>
+      <div class="ops-staff"><a href="../index.html"><span>返回总览</span>${icon('back')}</a></div>
     </aside>`;
   }
 
@@ -43,7 +43,7 @@
     root.innerHTML = `<div class="ops">${nav()}<div class="ops-workspace">
       <header class="ops-bar">
         <div class="ops-page-title"><h1>${heading}</h1><p>${description}</p></div>
-        <div class="ops-identity"><div><strong>平台运营</strong><small>内部管理员 · 原型演示</small></div><span class="ops-avatar">运</span></div>
+        <div class="ops-identity"><div><strong>平台运营</strong><small>内部管理员</small></div><span class="ops-avatar">运</span></div>
       </header>
       <main class="ops-main">${notice ? `<p role="status" class="ops-callout">${esc(notice)}</p>` : ''}${content}</main></div></div>`;
   }
@@ -135,7 +135,7 @@
       (!filters.network || device.network === filters.network) &&
       [device.sn, device.name, device.batch ?? ''].some(value => value.toUpperCase().includes(q)));
     return summary(matches) + filterForm() +
-      `<div class="ops-list-tools"><span class="ops-count">共 ${matches.length} 台 · 未上线设备不计入离线</span>
+      `<div class="ops-list-tools"><span class="ops-count">共 ${matches.length} 台</span>
         ${button('入库', 'ops-primary', 'type="button" aria-disabled="true"')}</div>
       ${matches.length ? `<section class="ops-device-grid" aria-label="设备列表">${matches.map(deviceCard).join('')}</section>` :
         '<div class="ops-card ops-empty">暂无符合条件的设备。</div>'}`;

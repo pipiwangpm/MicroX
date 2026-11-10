@@ -89,7 +89,7 @@ window.MicroXEnrollment = (() => {
     if (!expectedOwner || device?.owner !== expectedOwner) return '绑定关系已变化，请刷新后重试。';
     if (source === 'app' && current()?.id !== expectedOwner) return '请由当前绑定账号操作。';
     device.history.unshift({ type: source === 'admin' ? '后台代办解绑' : 'App 自助解绑', user: expectedOwner,
-      at: now(), actor: source === 'admin' ? '平台运营（演示）' : '用户本人', reason });
+      at: now(), actor: source === 'admin' ? '平台运营' : '用户本人', reason });
     device.owner = null;
     save(data);
     return '';

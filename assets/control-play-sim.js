@@ -47,7 +47,7 @@ function simReport(message) {
 }
 
 function simLogsPanel() {
-  return `<section class="control-panel logs-panel"><header class="cp-head"><h2>仿真日志</h2><span>演示会话</span></header><div class="log-console">${simSession.events.length?simSession.events.map(e=>`<div class="log-row"><span class="log-time">${e.time}</span><span class="log-text">${esc(e.message)}</span></div>`).join(''):'<span>等待启动仿真。</span>'}</div></section>`;
+  return `<section class="control-panel logs-panel"><header class="cp-head"><h2>仿真日志</h2></header><div class="log-console">${simSession.events.length?simSession.events.map(e=>`<div class="log-row"><span class="log-time">${e.time}</span><span class="log-text">${esc(e.message)}</span></div>`).join(''):'<span>等待启动仿真。</span>'}</div></section>`;
 }
 
 function drawPlaySimulation() {

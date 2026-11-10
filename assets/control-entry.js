@@ -8,12 +8,12 @@ if(method==='bridge')return `<span class="entry-caption">本地连接服务</spa
 const account = MicroXEnrollment.current();
 const device = MicroXEnrollment.owned();
 return `<span class="entry-caption">联网调试</span><h2>连接 App 已绑定的 RayDino</h2>
-  <p>使用同一演示账号查看已绑定设备。首次认领在 App 里完成。</p>
+
   ${account ? `<p>当前账号 ${MicroXEnrollment.mask(account.phone)}</p>` : ''}
   ${device ? `<div class="entry-device"><img src="../assets/robot-x3-green.png" alt="RayDino"><div><h3>RayDino</h3><p>${esc(device.sn)}</p></div><span>已绑定</span></div>
     ${btn('连接此机器人','cloud-connect','orange')}` : account ?
     '<p>当前账号暂无绑定设备。</p><a class="btn orange" href="../mobile/bind.html?from=control"><span>去 App 绑定设备</span></a>' : ''}
-  <div class="linkrow">${btn('使用注册演示账号','demo-register')}${btn('使用登录演示账号','demo-login')}</div>`;}
+  <div class="linkrow">${btn('使用注册账号','demo-register')}${btn('使用登录账号','demo-login')}</div>`;}
 
 document.addEventListener('click', event => {
   const tab = event.target.closest('[data-method]');
