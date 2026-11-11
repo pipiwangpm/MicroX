@@ -2,18 +2,70 @@ const simSession = {
   running: false, output: '等待启动', events: [], light: '', position: 0, phone: false
 };
 
+const simRobot = { posture: 'standing', x: 0, y: 0, heading: 0 };
+let simDriveFrame = 0;
+
+function simDriveDisabled() {
+  return simSession.running || simRobot.posture === 'sitting';
+}
+
+function drawSimRobot() {
+  const viewport = document.querySelector('.workspace-preview .viewport');
+  const robot = viewport?.querySelector('.robot-visual');
+  if (!robot) return;
+  const angle = simRobot.heading * Math.PI / 180;
+  const sitting = simRobot.posture === 'sitting';
+  robot.style.translate = `${simRobot.x * viewport.clientWidth}px ${simRobot.y * viewport.clientHeight}px`;
+  robot.style.transform = `translateX(-50%) perspective(650px) rotateY(${Math.sin(angle) * 35}deg) scaleY(${sitting ? .68 : 1})`;
+}
+
+function startSimDrive(direction, speed) {
+  let previous = performance.now() - 25;
+  function update(now) {
+    const seconds = Math.min(.05, (now - previous) / 1000);
+    previous = now;
+    if (direction === 'left' || direction === 'right') {
+      simRobot.heading = (simRobot.heading + seconds * speed * 2 * (direction === 'left' ? -1 : 1)) % 360;
+    } else {
+      const distance = seconds * speed / 155 * (direction === 'forward' ? 1 : -1);
+      const angle = simRobot.heading * Math.PI / 180;
+      simRobot.x = Math.min(.24, Math.max(-.24, simRobot.x + distance * Math.sin(angle)));
+      simRobot.y = Math.min(.19, Math.max(-.19, simRobot.y - distance * Math.cos(angle)));
+    }
+    drawSimRobot();
+    simDriveFrame = requestAnimationFrame(update);
+  }
+  update(performance.now());
+}
+
+function stopSimDrive() {
+  cancelAnimationFrame(simDriveFrame);
+}
+
+function simPosturePanel() {
+  const sitting = simRobot.posture === 'sitting';
+  return `<section class="control-panel play-simulator">
+    <header class="cp-head"><h2>身体姿态</h2><span role="status">${sitting ? '已坐下' : '站立中'}</span></header>
+    <div class="sim-play-body"><div class="linkrow">
+      <button type="button" class="btn" data-sim-posture="standing" ${simSession.running || !sitting ? 'disabled' : ''}><span>站起</span></button>
+      <button type="button" class="btn" data-sim-posture="sitting" ${simSession.running || sitting ? 'disabled' : ''}><span>坐下</span></button>
+    </div></div>
+  </section>`;
+}
+
 function renderPlaySimulator() {
   const play = selectedApp;
-  return pTitle('仿真调试', '', '<a class="btn" href="apps.html"><span>返回玩法</span></a>') + `
+  return pTitle('机器人仿真', '', '<a class="btn" href="apps.html"><span>返回玩法</span></a>') +
+    renderDrivePanel() + simPosturePanel() + `
     <section class="control-panel play-simulator">
-      <header class="cp-head"><h2>运行配置</h2><span>虚拟 RayDino</span></header>
+      <header class="cp-head"><h2>玩法仿真</h2></header>
       <div class="sim-play-body">
         <label for="sim-play-picker">选择玩法</label>
         <select id="sim-play-picker" ${simSession.running?'disabled':''}>${APPS.map(a=>`<option value="${a.id}" ${a.id===play.id?'selected':''}>${a.name}</option>`).join('')}</select>
         <p>${play.desc}</p>
         <div class="linkrow">
-          <button class="btn orange" data-play-sim="start" ${simSession.running?'disabled':''}>${icon('play')}<span>启动仿真</span></button>
-          <button class="btn" data-play-sim="stop" ${simSession.running?'':'disabled'}>${icon('stop')}<span>停止</span></button>
+          <button class="btn orange" data-play-sim="start" ${simSession.running || simRobot.posture === 'sitting' ? 'disabled' : ''}>${icon('play')}<span>启动仿真</span></button>
+          <button class="btn" data-play-sim="stop" ${simSession.running?'':'disabled'}>${icon('stop')}<span>停止玩法</span></button>
         </div>
       </div>
     </section>
@@ -47,14 +99,18 @@ function simReport(message) {
 }
 
 function simLogsPanel() {
-  return `<section class="control-panel logs-panel"><header class="cp-head"><h2>仿真日志</h2></header><div class="log-console">${simSession.events.length?simSession.events.map(e=>`<div class="log-row"><span class="log-time">${e.time}</span><span class="log-text">${esc(e.message)}</span></div>`).join(''):'<span>等待启动仿真。</span>'}</div></section>`;
+  return `<section class="control-panel logs-panel"><header class="cp-head"><h2>仿真日志</h2></header><div class="log-console">${simSession.events.length?simSession.events.map(e=>`<div class="log-row"><span class="log-time">${e.time}</span><span class="log-text">${esc(e.message)}</span></div>`).join(''):'<span>仿真就绪。</span>'}</div></section>`;
 }
 
 function drawPlaySimulation() {
   if (!isPlaySimulation()) return;
+  if (!simSession.running || selectedApp.id !== 'spot') {
+    drawSimRobot();
+    return;
+  }
   const viewport = document.querySelector('.workspace-preview .viewport');
   const robot = viewport?.querySelector('.robot-visual');
-  if (!robot || selectedApp.id !== 'spot') return;
+  if (!robot) return;
   robot.classList.add('sim-follow-robot');
   robot.style.translate = simSession.position + 'px 0';
   if (!simSession.light) return;
@@ -74,14 +130,28 @@ function isPlaySimulation() {
 
 document.addEventListener('change', event => {
   if (event.target.id !== 'sim-play-picker' || simSession.running) return;
-  location.href = 'simulator.html?app=' + encodeURIComponent(event.target.value);
+  selectedApp = appById(event.target.value);
+  const url = new URL(location.href);
+  url.searchParams.set('app', selectedApp.id);
+  history.replaceState(null, '', url);
+  simSession.output = '等待启动';
+  pcRender();
+  document.getElementById('sim-play-picker')?.focus();
 });
 
 document.addEventListener('click', event => {
+  if (!isPlaySimulation()) return;
+  const posture = event.target.closest('[data-sim-posture]')?.dataset.simPosture;
+  if (posture && !simSession.running) {
+    simRobot.posture = posture;
+    simReport(posture === 'standing' ? '虚拟 RayDino 已站起。' : '虚拟 RayDino 已坐下。');
+    document.querySelector('[data-sim-posture]:enabled')?.focus();
+    return;
+  }
   const action = event.target.closest('[data-play-sim]')?.dataset.playSim;
-  if (!action || !isPlaySimulation()) return;
+  if (!action) return;
   if (action === 'start') {
-    if (simSession.running) return;
+    if (simDriveDisabled()) return;
     simSession.running = true;
     simSession.light = selectedApp.id === 'spot' ? 'right' : '';
     simReport(selectedApp.name + '已在虚拟 RayDino 启动。');
@@ -91,7 +161,7 @@ document.addEventListener('click', event => {
   if (action === 'stop') {
     stopAnimation();
     Object.assign(simSession, {running:false, light:'', phone:false});
-    simReport('仿真已停止。');
+    simReport('玩法仿真已停止。');
     return;
   }
   if (action === 'left' || action === 'right') {

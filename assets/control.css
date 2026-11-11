@@ -40,3 +40,11 @@ body{background:#171c19;color:#d6ddd9}.proto-strip{background:#121513;border-col
 .local-media-row [role=status]{font-size:11px;color:#5e6e59}
 .local-camera{width:100%;max-height:240px;background:#26372d;border-radius:8px;object-fit:contain;margin-top:8px}
 .local-camera[hidden]{display:none}
+
+body[data-page="simulator"] .workspace-preview .robot-visual {
+  transform-origin: center 75%;
+  transition: transform .2s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="simulator"] .workspace-preview .robot-visual { transition: none; }
+}
