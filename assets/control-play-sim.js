@@ -63,7 +63,7 @@ function stopSimDrive() {
 const desktopBodyActions=[['sitting','坐下'],['standing','起立'],['kick','踢腿'],['roll','前滚翻'],['pick','蹲下夹东西']];
 function simPosturePanel() {
   const blocked=simSession.running||!!simRobot.action||(!isSimMode()&&(!pc.connected||pc.sleeping||pc.running));
-  const state=simRobot.action?desktopBodyActions.find(x=>x[0]===simRobot.action)[1]+' · 执行中':simRobot.holding?'已夹住物品':simRobot.posture==='sitting'?'已坐下':'站立中';
+  const state=simRobot.action?(simRobot.action==='pick'&&simRobot.holding?'放下物品':desktopBodyActions.find(x=>x[0]===simRobot.action)[1])+' · 执行中':simRobot.holding?'已夹住物品':simRobot.posture==='sitting'?'已坐下':'站立中';
   return `<section class="control-panel body-action-panel"><header class="cp-head"><h2>身体动作</h2><span role="status">${state}</span></header><div class="body-action-buttons">${desktopBodyActions.map(([id,label])=>`<button class="btn" data-sim-body="${id}" ${id==='sitting'||id==='standing'?`data-sim-posture="${id}"`:''} aria-pressed="${id===simRobot.posture}" ${blocked||id===simRobot.posture||(simRobot.posture==='sitting'&&id!=='standing')?'disabled':''}><span>${id==='pick'&&simRobot.holding?'放下物品':label}</span></button>`).join('')}</div><div class="body-action-footer"><button class="btn danger" data-body-stop ${simRobot.action?'':'disabled'}>停止动作</button></div></section>`;
 }
 function cancelBodyAction(){clearTimeout(bodyActionTimer);simRobot.action='';simRobot.actionStart=0;}
