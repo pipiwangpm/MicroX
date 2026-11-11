@@ -33,3 +33,10 @@ body{background:#171c19;color:#d6ddd9}.proto-strip{background:#121513;border-col
 .sim-follow-robot{transition:translate .75s ease-out}
 .sim-light{position:absolute;z-index:4;top:78%;width:13px;height:13px;border-radius:50%;background:#fff3ad;box-shadow:0 0 0 5px #ffd06d7a,0 0 16px 6px #f9bf43a3}
 .sim-light.left{left:24%}.sim-light.right{left:74%}
+
+.local-media-body{padding:12px 16px}
+.local-media-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0}
+.local-media-row>div{display:grid;gap:3px}
+.local-media-row [role=status]{font-size:11px;color:#5e6e59}
+.local-camera{width:100%;max-height:240px;background:#26372d;border-radius:8px;object-fit:contain;margin-top:8px}
+.local-camera[hidden]{display:none}

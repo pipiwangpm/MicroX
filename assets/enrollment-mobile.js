@@ -207,8 +207,7 @@
     frame(`<p class="kicker">连接机器人 · 完成</p><h1>已认领并连接</h1>
       ${deviceCard(candidate.name)}
       <p>你现在可以和它对话、遥控或打开玩法。</p>
-      <a class="enroll-action enroll-primary" href="index.html"><span>进入我的机器人</span></a>
-      ${params.get('from') === 'control' ? '<a class="enroll-action enroll-alt" href="../control/start.html?method=cloud"><span>返回开发者 Web</span></a>' : ''}`);
+      <a class="enroll-action enroll-primary" href="index.html"><span>进入我的机器人</span></a>`);
   }
 
   root.addEventListener('click', event => {
