@@ -7,3 +7,7 @@
 - 管理后台可筛选设备产品线、查看在线状态和绑定关系，以及在设备详情演示代办解绑。「入库」是统一入口占位。
 
 这是公开的静态演示。登录、设备连接、实机操作和后台数据均为浏览器中的模拟流程。仿真调试设备通过浏览器权限调用本机摄像头和麦克风。浏览器扫码可以识别[样例二维码](demo/raydino-pairing.png)。
+
+三维仿真场地参考 [Microduck Simulator](https://huggingface.co/spaces/pollen-robotics/microduck-simulator) 的场景和操控组织。拖动场地旋转视角，滚轮缩放，C 切换跟随视角，R 站起或坐下，WASD／方向键控制移动，空格停止。工具栏可重置场地。
+
+RayDino 使用按产品外观搭建的简化三维关节模型，展示步态、姿态和玩法交互。后续可接入实际关节模型、物理参数和控制策略。场景渲染使用 Three.js，许可见 assets/vendor/three-LICENSE.txt。

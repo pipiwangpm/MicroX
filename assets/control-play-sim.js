@@ -4,12 +4,24 @@ const simSession = {
 
 const simRobot = { posture: 'standing', x: 0, y: 0, heading: 0 };
 let simDriveFrame = 0;
+let simDriveDirection = '';
 
 function simDriveDisabled() {
   return simSession.running || simRobot.posture === 'sitting';
 }
 
+function mountSimArena() {
+  const stage = document.querySelector('.workspace-preview .viewport');
+  if (!stage || !window.controlArena) return false;
+  window.controlArena.mount(stage);
+  return true;
+}
+
 function drawSimRobot() {
+  if (mountSimArena()) {
+    window.controlArena.update({ ...simRobot, moving: simDriveDirection });
+    return;
+  }
   const viewport = document.querySelector('.workspace-preview .viewport');
   const robot = viewport?.querySelector('.robot-visual');
   if (!robot) return;
@@ -20,6 +32,7 @@ function drawSimRobot() {
 }
 
 function startSimDrive(direction, speed) {
+  simDriveDirection = direction;
   let previous = performance.now() - 25;
   function update(now) {
     const seconds = Math.min(.05, (now - previous) / 1000);
@@ -40,6 +53,9 @@ function startSimDrive(direction, speed) {
 
 function stopSimDrive() {
   cancelAnimationFrame(simDriveFrame);
+  if (!simDriveDirection) return;
+  simDriveDirection = '';
+  if (!simSession.running) drawSimRobot();
 }
 
 function simPosturePanel() {
@@ -92,9 +108,8 @@ function simReport(message) {
   simSession.events.unshift({time:new Date().toLocaleTimeString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}),message});
   simSession.events = simSession.events.slice(0,20);
   const robot = document.querySelector('.workspace-preview .sim-follow-robot');
-  simSession.position = simSession.running && robot
-    ? (parseFloat(getComputedStyle(robot).translate) || 0)
-    : 0;
+  if (!simSession.running) simSession.position = 0;
+  else if (robot) simSession.position = parseFloat(getComputedStyle(robot).translate) || 0;
   pcRender();
 }
 
@@ -106,6 +121,13 @@ function drawPlaySimulation() {
   if (!isPlaySimulation()) return;
   if (!simSession.running || selectedApp.id !== 'spot') {
     drawSimRobot();
+    return;
+  }
+  if (mountSimArena()) {
+    const light = simSession.light;
+    const x = light ? (light === 'left' ? -.14 : .14) : simSession.position;
+    simSession.position = x;
+    window.controlArena.update({ ...simRobot, x, y: 0, heading: 0, light, moving: '' });
     return;
   }
   const viewport = document.querySelector('.workspace-preview .viewport');
@@ -180,6 +202,13 @@ document.addEventListener('click', event => {
     return;
   }
 
+});
+
+document.addEventListener('arena-reset', () => {
+  releaseKeyboard();
+  Object.assign(simRobot, { x: 0, y: 0, heading: 0, posture: 'standing' });
+  Object.assign(simSession, { running: false, light: '', phone: false, position: 0 });
+  simReport('场地已重置。');
 });
 
 window.addEventListener('pagehide', stopAnimation);
