@@ -48,7 +48,9 @@ function createRobot() {
   head.position.set(0, .75, -.26);
   body.add(head);
   box(head, [.61, .38, .74], [0, .14, -.13], green, .065);
-  box(head, [.56, .15, .65], [0, -.05, -.16], pale);
+  const jaw=new THREE.Group();
+  jaw.position.set(0,-.05,.1);head.add(jaw);
+  box(jaw, [.56, .15, .65], [0, 0, -.26], pale);
   box(head, [.43, .032, .59], [0, .015, -.16], dark, .009);
   box(head, [.23, .05, .19], [0, .34, -.06], orange, .012);
   box(head, [.18, .05, .023], [0, .19, -.503], dark, .007);
@@ -77,7 +79,7 @@ function createRobot() {
     box(foot, [.26, .045, .39], [0, -.077, -.07], orange, .012);
     return { hip, knee, foot };
   });
-  return { root, body, head, legs };
+  return { root, body, head, legs, jaw };
 }
 
 function createArena() {
@@ -117,6 +119,9 @@ function createArena() {
   const center = new THREE.Vector3();
   const homeView = { yaw: .83, pitch: .38, zoom: 5.3 };
   const orbit = { ...homeView, follow: true };
+  const prop=new THREE.Mesh(new THREE.BoxGeometry(.18,.18,.18),new THREE.MeshStandardMaterial({color:0xf3c76b,roughness:.6}));
+  scene.add(prop);
+  const gripPoint=new THREE.Vector3();
   let stage;
   let controls;
   let drag;
@@ -138,15 +143,40 @@ function createArena() {
     robot.root.position.z += (y * 15 - robot.root.position.z) * .2;
     robot.root.rotation.y = -THREE.MathUtils.degToRad(heading);
     shadow.position.set(robot.root.position.x, .009, robot.root.position.z);
-    const sitting = posture === 'sitting';
-    const swing = moving ? Math.sin(time / 95) * .28 : 0;
-    robot.body.position.y += ((sitting ? .49 : .81 + Math.abs(swing) * .03) - robot.body.position.y) * .16;
-    robot.head.rotation.x += ((sitting ? .15 : 0) - robot.head.rotation.x) * .17;
-    robot.legs.forEach(({ hip, knee, foot }, index) => {
-      hip.rotation.x += ((sitting ? -.95 : swing * (index ? -1 : 1)) - hip.rotation.x) * .2;
-      knee.rotation.x += ((sitting ? 1.77 : Math.abs(swing) * .55) - knee.rotation.x) * .2;
-      foot.rotation.x = -hip.rotation.x - knee.rotation.x;
+    const action=state.action||'';
+    const durations={sitting:1200,standing:1200,kick:1200,roll:2200,pick:2600};
+    const progress=action?THREE.MathUtils.clamp((performance.now()-state.actionStart)/durations[action],0,1):0;
+    const ease=t=>t*t*(3-2*t);
+    let crouch=posture==='sitting'?1:0;
+    if(action==='sitting')crouch=ease(progress);
+    if(action==='standing')crouch=1-ease(progress);
+    if(action==='pick')crouch=Math.sin(Math.PI*progress)*.95;
+    const swing=moving?Math.sin(time/95)*.28:0;
+    const kick=action==='kick'?Math.sin(Math.PI*progress)**2:0;
+    const roll=action==='roll'?ease(progress):0;
+    const tucked=action==='roll'?Math.sin(Math.PI*progress):crouch;
+    const height=action==='roll'?.81+Math.sin(Math.PI*progress)*1.05:.81-crouch*.32+Math.abs(swing)*.03;
+    robot.body.position.y+=(height-robot.body.position.y)*.16;
+    // Rotate the articulated body around its center, then return to standing.
+    robot.body.rotation.x=-roll*Math.PI*2;
+    robot.head.rotation.x+=((-crouch*.35)-robot.head.rotation.x)*.17;
+    robot.jaw.rotation.x=action==='pick'?Math.sin(Math.PI*progress)*-.38:0;
+    robot.legs.forEach(({ hip, knee, foot }, index)=>{
+      const legKick=index===0?kick:0;
+      hip.rotation.x+=((-tucked*.95+swing*(index?-1:1)+legKick*1.2)-hip.rotation.x)*.2;
+      knee.rotation.x+=((tucked*1.77+Math.abs(swing)*.55+legKick*.28)-knee.rotation.x)*.2;
+      foot.rotation.x=-hip.rotation.x-knee.rotation.x;
     });
+    const gripping=action==='pick'?(state.holding?progress<.5:progress>.5):state.holding;
+    prop.visible=Boolean(state.holding||action==='pick');
+    if(gripping){
+      robot.head.updateWorldMatrix(true,false);
+      gripPoint.set(0,-.12,-.56).applyMatrix4(robot.head.matrixWorld);
+      prop.position.copy(gripPoint);
+    }else{
+      gripPoint.set(0,.1,-.9).applyAxisAngle(new THREE.Vector3(0,1,0),robot.root.rotation.y);
+      prop.position.copy(gripPoint).add(robot.root.position);
+    }
     light.visible = Boolean(state.light);
     light.position.set(state.light === 'left' ? -2.15 : 2.15, .018, -.2);
 
@@ -223,7 +253,7 @@ function createArena() {
 }
 
 try {
-  if (document.querySelector('.workspace-preview .viewport')) {
+  if (isPlaySimulation() && document.querySelector('.workspace-preview .viewport')) {
     window.controlArena = createArena();
     drawPlaySimulation();
   }

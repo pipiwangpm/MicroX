@@ -2,12 +2,13 @@ const simSession = {
   running: false, output: '等待启动', events: [], light: '', position: 0, phone: false
 };
 
-const simRobot = { posture: 'standing', x: 0, y: 0, heading: 0 };
+const simRobot = { posture: 'standing', x: 0, y: 0, heading: 0, action: '', actionStart: 0, holding: false };
+let bodyActionTimer = 0;
 let simDriveFrame = 0;
 let simDriveDirection = '';
 
 function simDriveDisabled() {
-  return simSession.running || simRobot.posture === 'sitting';
+  return simSession.running || !!simRobot.action || simRobot.posture === 'sitting';
 }
 
 function mountSimArena() {
@@ -27,6 +28,7 @@ function drawSimRobot() {
   if (!robot) return;
   const angle = simRobot.heading * Math.PI / 180;
   const sitting = simRobot.posture === 'sitting';
+  robot.dataset.bodyMotion=simRobot.action;
   robot.style.translate = `${simRobot.x * viewport.clientWidth}px ${simRobot.y * viewport.clientHeight}px`;
   robot.style.transform = `translateX(-50%) perspective(650px) rotateY(${Math.sin(angle) * 35}deg) scaleY(${sitting ? .68 : 1})`;
 }
@@ -58,15 +60,18 @@ function stopSimDrive() {
   if (!simSession.running) drawSimRobot();
 }
 
+const desktopBodyActions=[['sitting','坐下'],['standing','起立'],['kick','踢腿'],['roll','前滚翻'],['pick','蹲下夹东西']];
 function simPosturePanel() {
-  const sitting = simRobot.posture === 'sitting';
-  return `<section class="control-panel play-simulator">
-    <header class="cp-head"><h2>身体姿态</h2><span role="status">${sitting ? '已坐下' : '站立中'}</span></header>
-    <div class="sim-play-body"><div class="linkrow">
-      <button type="button" class="btn" data-sim-posture="standing" ${simSession.running || !sitting ? 'disabled' : ''}><span>站起</span></button>
-      <button type="button" class="btn" data-sim-posture="sitting" ${simSession.running || sitting ? 'disabled' : ''}><span>坐下</span></button>
-    </div></div>
-  </section>`;
+  const blocked=simSession.running||!!simRobot.action||(!isSimMode()&&(!pc.connected||pc.sleeping||pc.running));
+  const state=simRobot.action?desktopBodyActions.find(x=>x[0]===simRobot.action)[1]+' · 执行中':simRobot.holding?'已夹住物品':simRobot.posture==='sitting'?'已坐下':'站立中';
+  return `<section class="control-panel body-action-panel"><header class="cp-head"><h2>身体动作</h2><span role="status">${state}</span></header><div class="body-action-buttons">${desktopBodyActions.map(([id,label])=>`<button class="btn" data-sim-body="${id}" ${id==='sitting'||id==='standing'?`data-sim-posture="${id}"`:''} aria-pressed="${id===simRobot.posture}" ${blocked||id===simRobot.posture||(simRobot.posture==='sitting'&&id!=='standing')?'disabled':''}><span>${id==='pick'&&simRobot.holding?'放下物品':label}</span></button>`).join('')}</div><div class="body-action-footer"><button class="btn danger" data-body-stop ${simRobot.action?'':'disabled'}>停止动作</button></div></section>`;
+}
+function cancelBodyAction(){clearTimeout(bodyActionTimer);simRobot.action='';simRobot.actionStart=0;}
+function runDesktopBody(id){
+  if(!desktopBodyActions.some(x=>x[0]===id)||simRobot.action||simSession.running||(!isSimMode()&&(!pc.connected||pc.sleeping||pc.running))||id===simRobot.posture||(simRobot.posture==='sitting'&&id!=='standing'))return;
+  releaseKeyboard();simRobot.action=id;simRobot.actionStart=performance.now();
+  simReport((id==='pick'&&simRobot.holding?'放下物品':desktopBodyActions.find(x=>x[0]===id)[1])+' · 执行中');
+  bodyActionTimer=setTimeout(()=>{if(id==='sitting'||id==='standing')simRobot.posture=id;if(id==='pick')simRobot.holding=!simRobot.holding;cancelBodyAction();simReport('动作已完成。')},id==='roll'?2200:id==='pick'?2600:1200);
 }
 
 function renderPlaySimulator() {
@@ -80,7 +85,7 @@ function renderPlaySimulator() {
         <select id="sim-play-picker" ${simSession.running?'disabled':''}>${APPS.map(a=>`<option value="${a.id}" ${a.id===play.id?'selected':''}>${a.name}</option>`).join('')}</select>
         <p>${play.desc}</p>
         <div class="linkrow">
-          <button class="btn orange" data-play-sim="start" ${simSession.running || simRobot.posture === 'sitting' ? 'disabled' : ''}>${icon('play')}<span>启动仿真</span></button>
+          <button class="btn orange" data-play-sim="start" ${simDriveDisabled() ? 'disabled' : ''}>${icon('play')}<span>启动仿真</span></button>
           <button class="btn" data-play-sim="stop" ${simSession.running?'':'disabled'}>${icon('stop')}<span>停止玩法</span></button>
         </div>
       </div>
@@ -104,6 +109,7 @@ function simControls(id) {
 }
 
 function simReport(message) {
+  if(!isSimMode())pLog(message);
   simSession.output = message;
   simSession.events.unshift({time:new Date().toLocaleTimeString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}),message});
   simSession.events = simSession.events.slice(0,20);
@@ -134,6 +140,7 @@ function drawPlaySimulation() {
   const robot = viewport?.querySelector('.robot-visual');
   if (!robot) return;
   robot.classList.add('sim-follow-robot');
+  robot.dataset.bodyMotion=simRobot.action;
   robot.style.translate = simSession.position + 'px 0';
   if (!simSession.light) return;
   const light = document.createElement('span');
@@ -147,7 +154,7 @@ function drawPlaySimulation() {
 }
 
 function isPlaySimulation() {
-  return page === 'simulator';
+  return page === 'simulator' || (page === 'controller' && isSimMode());
 }
 
 document.addEventListener('change', event => {
@@ -162,14 +169,12 @@ document.addEventListener('change', event => {
 });
 
 document.addEventListener('click', event => {
-  if (!isPlaySimulation()) return;
-  const posture = event.target.closest('[data-sim-posture]')?.dataset.simPosture;
-  if (posture && !simSession.running) {
-    simRobot.posture = posture;
-    simReport(posture === 'standing' ? '虚拟 RayDino 已站起。' : '虚拟 RayDino 已坐下。');
-    document.querySelector('[data-sim-posture]:enabled')?.focus();
-    return;
-  }
+  if (page!=='simulator'&&page!=='controller')return;
+  const button=event.target.closest('button');
+  if(!button||button.disabled)return;
+  if(button.hasAttribute('data-body-stop')){cancelBodyAction();releaseKeyboard();simReport('动作已停止。');return;}
+  if(button.dataset.simBody){runDesktopBody(button.dataset.simBody);return;}
+  if(!isPlaySimulation())return;
   const action = event.target.closest('[data-play-sim]')?.dataset.playSim;
   if (!action) return;
   if (action === 'start') {
@@ -205,10 +210,12 @@ document.addEventListener('click', event => {
 });
 
 document.addEventListener('arena-reset', () => {
+  cancelBodyAction();
   releaseKeyboard();
-  Object.assign(simRobot, { x: 0, y: 0, heading: 0, posture: 'standing' });
+  Object.assign(simRobot, { x: 0, y: 0, heading: 0, posture: 'standing', holding: false });
   Object.assign(simSession, { running: false, light: '', phone: false, position: 0 });
   simReport('场地已重置。');
 });
 
-window.addEventListener('pagehide', stopAnimation);
+window.addEventListener('pagehide', () => {cancelBodyAction();stopAnimation();});
+window.addEventListener('blur',()=>{if(simRobot.action){cancelBodyAction();simReport('动作已停止。');}});
