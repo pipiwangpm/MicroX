@@ -33,3 +33,76 @@ body{background:#171c19;color:#d6ddd9}.proto-strip{background:#121513;border-col
 .sim-follow-robot{transition:translate .75s ease-out}
 .sim-light{position:absolute;z-index:4;top:78%;width:13px;height:13px;border-radius:50%;background:#fff3ad;box-shadow:0 0 0 5px #ffd06d7a,0 0 16px 6px #f9bf43a3}
 .sim-light.left{left:24%}.sim-light.right{left:74%}
+
+.local-media-body{padding:12px 16px}
+.local-media-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0}
+.local-media-row>div{display:grid;gap:3px}
+.local-media-row [role=status]{font-size:11px;color:#5e6e59}
+.local-camera{width:100%;max-height:240px;background:#26372d;border-radius:8px;object-fit:contain;margin-top:8px}
+.local-camera[hidden]{display:none}
+
+body[data-page="simulator"] .workspace-preview .robot-visual {
+  transform-origin: center 75%;
+  transition: transform .2s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="simulator"] .workspace-preview .robot-visual { transition: none; }
+}
+
+body[data-page="simulator"] .workspace-split {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 34%);
+}
+body[data-page="simulator"] .workspace-preview {
+  grid-area: 1 / 1;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  min-height: 0;
+  border-left: 0;
+  border-right: 1px solid var(--desk-line);
+}
+body[data-page="simulator"] .workspace-operation { grid-area: 1 / 2; min-width: 0; padding: 24px 18px; }
+body[data-page="simulator"] .workspace-preview .sim-arena {
+  height: clamp(330px, 60vh, 680px);
+  min-height: 0;
+  background: #17211e;
+  border: 1px solid #344a40;
+}
+.sim-arena canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+.sim-arena canvas:active { cursor: grabbing; }
+.arena-toolbar {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 6px;
+}
+.arena-toolbar button {
+  color: #f3f5e8;
+  background: #23342be8;
+  border: 1px solid #728579;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 11px;
+}
+.arena-toolbar button[aria-pressed="true"] { color: #203228; background: #d7e7c6; }
+body[data-page="simulator"] .keyboard-intro { padding: 12px 15px; }
+body[data-page="simulator"] .keyboard-controls { gap: 6px; padding: 0 12px 12px; }
+body[data-page="simulator"] .keyboard-controls button { min-height: 65px; padding: 6px 2px; }
+body[data-page="simulator"] .keyboard-controls small { display: none; }
+body[data-page="simulator"] .keyboard-footer { padding: 8px 12px; }
+@media (max-width: 990px) {
+  body[data-page="simulator"] .workspace-split { grid-template-columns: minmax(0, 1fr); }
+  body[data-page="simulator"] .workspace-preview { grid-area: 1 / 1; position: relative; border-right: 0; }
+  body[data-page="simulator"] .workspace-operation { grid-area: 2 / 1; }
+}
+
+.body-action-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:14px}.body-action-buttons .btn:last-child{grid-column:1/-1}.body-action-buttons .btn{justify-content:center;min-height:39px}.body-action-buttons [aria-pressed=true]{background:#e4eddc;border-color:#b5c8a8;color:#38552e}.body-action-footer{padding:0 14px 14px;display:flex;justify-content:flex-end}.workspace-preview .sim-arena{min-height:320px;}
+
+.robot-visual[data-body-motion=kick] .robot-img{animation:body-kick 1.2s ease-in-out}
+.robot-visual[data-body-motion=roll] .robot-img{animation:body-roll 2.2s ease-in-out}
+.robot-visual[data-body-motion=pick] .robot-img{animation:body-pick 2.6s ease-in-out}
+@keyframes body-kick{0%,100%{transform:rotate(0)}50%{transform:rotate(-15deg) translateY(-7px)}}
+@keyframes body-roll{0%{transform:rotate(0)}50%{transform:translateY(-25px) rotate(180deg)}100%{transform:rotate(360deg)}}
+@keyframes body-pick{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.68) translateY(15%)}}

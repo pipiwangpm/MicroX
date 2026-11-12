@@ -16,15 +16,15 @@ function render() {
     <div class="phone-status"><span>9:41</span><div class="phone-dynamic"></div><span class="phone-status-right">${icon('signal')}${icon('wifi')}${icon('battery')}</span></div>
     <div class="mobile-content">
       <header class="sg-bar"><a href="discover.html" aria-label="返回玩法">${icon('back')}</a><strong>光斑追踪</strong><span></span></header>
-      <div class="sg-device"><span>${icon('robot')}<strong>我的 MicroX</strong></span>${status(device.connected, '已连接', '未连接')}</div>
-      <div class="spot-intro"><h1>跟着光斑走</h1><p>把光斑投在小恐龙前方的地面上，慢慢移动光斑，小恐龙就会跟过去。</p></div>
-      <button class="spot-field" type="button" aria-label="移动演示光斑" data-active="${tracking}" aria-disabled="${!tracking}">
-        <span class="spot-grid" aria-hidden="true"></span><span class="spot-preview-label">跟随演示</span>
-        <span class="spot-light" aria-hidden="true"></span><img class="spot-robot" src="../assets/robot-x3-green.png" alt="MicroX 小恐龙">
+      <div class="sg-device"><span>${icon('robot')}<strong>我的 RayDino</strong></span>${status(device.connected, '已连接', '未连接')}</div>
+      <div class="spot-intro"><h1>跟着光斑走</h1><p>把光斑投在 RayDino 前方的地面上，慢慢移动光斑，RayDino 就会跟过去。</p></div>
+      <button class="spot-field" type="button" aria-label="移动光斑" data-active="${tracking}" aria-disabled="${!tracking}">
+        <span class="spot-grid" aria-hidden="true"></span>
+        <span class="spot-light" aria-hidden="true"></span><img class="spot-robot" src="../assets/robot-x3-green.png" alt="RayDino">
       </button>
-      <p class="spot-hint">开始后，点按场地可以移动演示光斑。</p>
-      <div class="spot-state" role="status" data-active="${tracking}"><span class="spot-state-dot"></span><span>${tracking ? '正在跟随光斑' : installed ? '已安装到小恐龙' : '尚未安装'}</span></div>
-      <div class="spot-actions"><button class="sg-btn ${tracking ? '' : 'primary'}" id="tracking-action"><span>${tracking ? '停止追踪' : !installed ? '安装到小恐龙' : device.connected ? '开始追踪' : '连接并开始'}</span></button><a href="discover.html">返回玩法</a></div>
+      <p class="spot-hint">开始后，点按场地可以移动光斑。</p>
+      <div class="spot-state" role="status" data-active="${tracking}"><span class="spot-state-dot"></span><span>${tracking ? '正在跟随光斑' : installed ? '已安装到 RayDino' : '尚未安装'}</span></div>
+      <div class="spot-actions"><button class="sg-btn ${tracking ? '' : 'primary'}" id="tracking-action"><span>${tracking ? '停止追踪' : !installed ? '安装到 RayDino' : device.connected ? '开始追踪' : '连接并开始'}</span></button><a href="discover.html">返回玩法</a></div>
     </div><div class="phone-home-indicator"></div></main></div>`;
   draw();
   document.getElementById('tracking-action').onclick = tracking ? stop : start;

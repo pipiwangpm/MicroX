@@ -1,0 +1,132 @@
+body[data-page="controller"] { background:#eceee7; }
+body[data-page="controller"] .mobile-review { min-height:100dvh; padding:24px 14px; align-items:center; }
+body[data-page="controller"].remote-wide .remote-screen {
+  --handset-height:100dvh;
+  --rc-accent:#52784a;
+  --handset-ink:#26372d;
+  --handset-muted:#526558;
+  --handset-line:#d8e1d4;
+  width:880px; max-width:100%; height:auto; min-height:0; margin:0; border:6px solid #d6ded1;
+  border-radius:32px; background:#fbfbf5; color:var(--handset-ink);
+}
+body[data-page="controller"].remote-wide .phone-status,
+body[data-page="controller"].remote-wide .phone-home-indicator { display:none; }
+body[data-page="controller"].remote-wide .remote-screen .mobile-content {
+  min-height:0; height:auto; width:100%; display:grid; gap:16px; padding:21px 24px 17px;
+}
+.handset-bar { display:flex; align-items:center; gap:12px; }
+.handset-bar h1 { margin:0; font-size:21px; letter-spacing:.01em; }
+.handset-icon {
+  width:36px; height:36px; display:grid; place-items:center; flex:none; color:#3f5746;
+  border:1px solid var(--handset-line); border-radius:10px; background:#ffffff; font-size:15px;
+}
+.handset-link-state {
+  margin-left:auto; display:flex; align-items:center; gap:7px; padding:7px 11px;
+  border-radius:16px; color:#36593f; background:#e7efdf; font-size:11px; white-space:nowrap;
+}
+.handset-led { width:7px; height:7px; border-radius:50%; background:#59824d; }
+.handset-deck { display:grid; grid-template-columns:minmax(0,1fr) minmax(146px,.8fr) minmax(0,1fr); gap:13px; }
+.handset-panel,.handset-center { min-width:0; border:1px solid var(--handset-line); border-radius:17px; }
+.handset-panel {
+  --dial:clamp(128px,21vw,182px);
+  display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+  gap:10px; padding:14px; background:#f3f6ed;
+}
+.handset-panel-head { display:flex; align-items:center; justify-content:space-between; gap:7px; width:100%; min-height:26px; }
+.handset-panel-head h2 { margin:0; font-size:15px; white-space:nowrap; }
+.handset-panel-head > span { color:var(--handset-muted); font-size:11px; white-space:nowrap; }
+.handset-panel-head button {
+  display:flex; align-items:center; gap:5px; padding:4px 7px; border:1px solid #cedacb;
+  border-radius:6px; background:#fdfefa; color:#425947; font-size:11px;
+}
+.remote-wide .handset-panel .rc-joystick {
+  width:var(--dial); height:var(--dial); margin:0; border-color:#b7c8b4;
+  background:#e6eee2; box-shadow:inset 0 0 0 7px #f7f9f2, inset 0 0 0 8px #cbd9c8;
+}
+.remote-wide .handset-panel .rc-stick-track { inset:25%; border:1px solid #b4c6b2; }
+.remote-wide .handset-panel .rc-direction { color:#4d6651; z-index:2; }
+.remote-wide .handset-panel .rc-direction.pressed { color:#2e5236; background:#c5ddbc; border-radius:50%; }
+.remote-wide .handset-panel .rc-stick {
+  width:37%; height:37%; left:31.5%; top:31.5%; border:4px solid #86a477;
+  background:#c1d9a9; box-shadow:0 5px 0 #8aa27f,0 9px 14px #344b3026;
+}
+.remote-wide .handset-panel .rc-grip {
+  width:47%; height:47%; border-color:#56754e;
+  background:repeating-linear-gradient(90deg,transparent 0 3px,#56754e 3px 4px);
+}
+.remote-wide .handset-head .rc-stick { background:#c0d9cf; border-color:#7b9f90; }
+.remote-wide .handset-head .rc-grip { border-color:#50776b; background:repeating-linear-gradient(90deg,transparent 0 3px,#50776b 3px 4px); }
+.remote-wide .handset-panel .rc-joystick.engaged { border-color:#709a65; }
+.remote-wide .handset-panel .rc-joystick.unavailable .rc-stick { background:#d0d9cf; border-color:#aab8a9; box-shadow:0 4px 0 #b3bfb0; }
+.handset-hint { min-height:17px; margin:0; color:var(--handset-muted); font-size:11px; white-space:nowrap; }
+.handset-pose { display:flex; gap:12px; }
+.handset-pose output { font-variant-numeric:tabular-nums; color:var(--handset-ink); }
+.handset-center {
+  display:grid; grid-template-rows:auto 1fr auto auto; gap:9px; padding:12px;
+  background:#ffffff; text-align:center;
+}
+.handset-status { display:flex; justify-content:center; gap:7px; align-items:center; min-height:21px; color:var(--handset-muted); font-size:11px; }
+.handset-status button { border:1px solid #cedacb; border-radius:6px; background:#edf3e9; color:var(--handset-ink); }
+.handset-speed { align-self:center; display:grid; justify-items:center; gap:4px; color:var(--handset-muted); font-size:11px; }
+.handset-speed strong { color:#35553b; line-height:1; font-size:clamp(32px,6vw,55px); font-weight:650; letter-spacing:-.06em; font-variant-numeric:tabular-nums; }
+.handset-speed small { margin-left:4px; font-size:15px; letter-spacing:0; }
+.handset-gears { display:flex; width:100%; justify-content:center; gap:3px; margin-top:6px; padding:3px; border:1px solid var(--handset-line); border-radius:9px; }
+.handset-gears button { flex:1; padding:6px 4px; border:0; border-radius:5px; color:#4a5e4c; background:transparent; font-size:11px; white-space:nowrap; }
+.handset-gears button[aria-pressed="true"] { color:#263822; background:#dcebcf; font-weight:700; }
+.handset-lock,.handset-stop { display:flex; justify-content:center; align-items:center; gap:7px; min-height:36px; padding:5px; border-radius:8px; font-size:12px; font-weight:650; }
+.handset-lock { border:1px solid #cedacb; color:#405c46; background:#f1f5ed; }
+.handset-lock[aria-pressed="true"] { background:#d9e9cc; color:#263822; }
+.handset-stop { border:1px solid #e7ad9f; background:#f9ddd5; color:#803628; font-size:14px; }
+.handset-footer { display:flex; justify-content:space-between; gap:8px; color:var(--handset-muted); font-size:11px; }
+.handset-deck button:disabled { opacity:.58; }
+
+@media (orientation:landscape) and (max-height:520px), (orientation:portrait) and (max-width:670px) {
+  body[data-page="controller"] .mobile-review { padding:0; }
+  body[data-page="controller"].remote-wide .remote-screen { width:100%; height:var(--handset-height); border:0; border-radius:0; }
+  body[data-page="controller"].remote-wide .remote-screen .mobile-content {
+    height:100%; grid-template-rows:auto minmax(0,1fr) auto auto; gap:9px;
+    padding:10px max(16px, env(safe-area-inset-right)) 9px max(16px, env(safe-area-inset-left));
+  }
+  .handset-panel { --dial:clamp(100px, calc(var(--handset-height) - 221px), 174px); gap:5px; padding:8px 11px; }
+  .handset-center { gap:5px; padding:7px 9px; }
+  .handset-lock,.handset-stop { min-height:30px; }
+}
+@media (orientation:portrait) and (max-width:670px) {
+  body[data-page="controller"] { overflow:hidden; height:100dvh; }
+  body[data-page="controller"] .mobile-review { padding:0; min-height:0; }
+  body[data-page="controller"].remote-wide .remote-screen {
+    --remote-rotated:1;
+    --handset-height:100dvw;
+    position:fixed;
+    left:50%; top:50%;
+    width:100dvh; max-width:none;
+    height:100dvw; min-height:0;
+    border:0; border-radius:0;
+    transform:translate(-50%,-50%) rotate(90deg);
+  }
+  body[data-page="controller"] .modal-wrap {
+    inset:auto; left:50%; top:50%;
+    width:100dvh; height:100dvw;
+    transform:translate(-50%,-50%) rotate(90deg);
+    align-items:center;
+  }
+}
+
+.handset-actions {border:1px solid var(--handset-line);border-radius:12px;background:#f3f6ed;padding:10px 12px;}
+.handset-actions > div:first-child {display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;font-size:12px;}
+.handset-actions [role=status] {font-size:11px;color:var(--handset-muted);}
+.handset-action-buttons {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;}
+.handset-action-buttons button {min-height:36px;border:1px solid #c8d5c3;border-radius:7px;background:#fff;color:#344c3a;font-weight:600;font-size:12px;}
+.handset-action-buttons button[aria-pressed=true] {background:#dcebcf;}
+.handset-action-buttons button:disabled {opacity:.5;}
+@media (orientation:landscape) and (max-height:520px), (orientation:portrait) and (max-width:670px) {.handset-actions{padding:6px 10px}.handset-actions > div:first-child{margin-bottom:4px}.handset-action-buttons button{min-height:30px}.handset-footer{font-size:10px}}
+
+@media (orientation:landscape) and (max-height:375px), (orientation:portrait) and (max-width:375px) {
+  body[data-page="controller"].remote-wide .remote-screen .mobile-content{gap:6px;padding-top:6px;padding-bottom:6px}
+  .handset-bar h1{font-size:18px}.handset-icon{width:30px;height:30px}
+  .handset-panel{--dial:clamp(90px,calc(var(--handset-height) - 210px),145px);padding:6px;gap:3px}
+  .handset-center{padding:5px 8px;gap:3px}.handset-speed{gap:2px}.handset-speed strong{font-size:30px}
+  .handset-gears{margin-top:2px;padding:2px}.handset-gears button{padding:4px}
+  .handset-lock,.handset-stop{min-height:24px;padding:3px;font-size:12px}
+  .handset-actions{padding:5px 9px}.handset-action-buttons button{min-height:28px}.handset-footer{font-size:9px}
+}
