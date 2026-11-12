@@ -92,7 +92,15 @@ document.addEventListener('click', event => {
   document.querySelector('[data-drive-camera]')?.focus();
 });
 let joystickPointer=null,joystickDirection=null;
-function moveJoystick(e){const stick=document.querySelector('[data-joystick]');if(!stick||stick.disabled)return;const pad=stick.parentElement,box=pad.getBoundingClientRect();let x=e.clientX-box.left-box.width/2,y=e.clientY-box.top-box.height/2;const distance=Math.hypot(x,y),limit=box.width*.24;if(distance>limit){x*=limit/distance;y*=limit/distance}if(distance<10){basicStop(false);joystickDirection=null}else{const direction=Math.abs(x)>Math.abs(y)?(x<0?'left':'right'):(y<0?'forward':'backward');if(direction!==joystickDirection||!driveButton){beginDrive(document.querySelector('[data-drive="'+direction+'"]'));joystickDirection=direction}pad.classList.add('engaged')}stick.style.translate=x+'px '+y+'px'}
+function remotePointerOffset(event, pad) {
+  const box = pad.getBoundingClientRect();
+  const x = event.clientX - box.left - box.width / 2;
+  const y = event.clientY - box.top - box.height / 2;
+  const screen = document.querySelector('.remote-screen');
+  const rotated = screen && getComputedStyle(screen).getPropertyValue('--remote-rotated').trim() === '1';
+  return rotated ? {x:y, y:-x} : {x, y};
+}
+function moveJoystick(e){const stick=document.querySelector('[data-joystick]');if(!stick||stick.disabled)return;const pad=stick.parentElement,box=pad.getBoundingClientRect();let {x,y}=remotePointerOffset(e,stick.parentElement);const distance=Math.hypot(x,y),limit=box.width*.24;if(distance>limit){x*=limit/distance;y*=limit/distance}if(distance<10){basicStop(false);joystickDirection=null}else{const direction=Math.abs(x)>Math.abs(y)?(x<0?'left':'right'):(y<0?'forward':'backward');if(direction!==joystickDirection||!driveButton){beginDrive(document.querySelector('[data-drive="'+direction+'"]'));joystickDirection=direction}pad.classList.add('engaged')}stick.style.translate=x+'px '+y+'px'}
 document.addEventListener('pointerdown',e=>{const stick=e.target.closest('[data-joystick]');if(!stick||stick.disabled)return;e.preventDefault();joystickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);moveJoystick(e)});
 document.addEventListener('pointermove',e=>{if(e.pointerId===joystickPointer)moveJoystick(e)});
 function releaseJoystick(e){if(e?.type?.startsWith('pointer')&&e.pointerId!==joystickPointer)return;if(joystickPointer!==null){joystickPointer=null;joystickDirection=null;basicStop(false)}}
@@ -103,7 +111,7 @@ window.addEventListener('resize',()=>{if(page==='controller')basicStop(false)});
 
 let headPointer=null;
 function updateHeadControl(){document.getElementById('head-yaw-value').textContent=headPose.yaw+'%';document.getElementById('head-pitch-value').textContent=headPose.pitch+'%';const knob=document.querySelector('[data-head-joystick]');if(knob){const limit=knob.parentElement.clientWidth*.23;knob.style.translate=(headPose.yaw/100*limit)+'px '+(-headPose.pitch/100*limit)+'px'}setBasicState('头部姿态已调整')}
-function moveHeadJoystick(e){const knob=document.querySelector('[data-head-joystick]');if(!knob||knob.disabled)return;const box=knob.parentElement.getBoundingClientRect(),limit=box.width*.23;let x=e.clientX-box.left-box.width/2,y=e.clientY-box.top-box.height/2;const d=Math.hypot(x,y);if(d>limit){x*=limit/d;y*=limit/d}headPose={yaw:Math.round(x/limit*100),pitch:Math.round(-y/limit*100)};updateHeadControl()}
+function moveHeadJoystick(e){const knob=document.querySelector('[data-head-joystick]');if(!knob||knob.disabled)return;const box=knob.parentElement.getBoundingClientRect(),limit=box.width*.23;let {x,y}=remotePointerOffset(e,knob.parentElement);const d=Math.hypot(x,y);if(d>limit){x*=limit/d;y*=limit/d}headPose={yaw:Math.round(x/limit*100),pitch:Math.round(-y/limit*100)};updateHeadControl()}
 document.addEventListener('pointerdown',e=>{const knob=e.target.closest('[data-head-joystick]');if(!knob||knob.disabled)return;e.preventDefault();headPointer=e.pointerId;knob.setPointerCapture(e.pointerId);moveHeadJoystick(e)});
 document.addEventListener('pointermove',e=>{if(headPointer===e.pointerId)moveHeadJoystick(e)});
 function releaseHeadPointer(e){if(e?.type?.startsWith('pointer')&&e.pointerId!==headPointer)return;headPointer=null}document.addEventListener('pointerup',releaseHeadPointer);document.addEventListener('pointercancel',releaseHeadPointer);window.addEventListener('blur',releaseHeadPointer);window.addEventListener('resize',releaseHeadPointer);

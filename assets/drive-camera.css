@@ -53,16 +53,22 @@ body[data-page="controller"] .remote-camera-layout .twin-gauge{width:auto;height
 .remote-camera-layout .twin-gauge strong{font-size:16px;letter-spacing:0}
 .remote-camera-layout .twin-gauge small{font-size:11px}
 .remote-camera-layout .twin-lock{margin-top:0;padding:6px 8px}
-@container (min-width:550px){
+@container (min-width:480px){
   body[data-page="controller"] .remote-camera-layout{
-    grid-template-columns:clamp(112px,20cqw,162px) minmax(0,1fr) clamp(112px,20cqw,162px);
+    grid-template-columns:clamp(92px,20cqw,162px) minmax(0,1fr) clamp(92px,20cqw,162px);
     grid-template-areas:"toolbar toolbar footer" "drive camera head" "speed pose .";
   }
   .remote-camera-layout .drive-camera-header{margin-bottom:6px}
-  .remote-camera-layout .drive-camera-frame{height:clamp(105px,calc(43dvh - 20px),190px)}
+  .remote-camera-layout .drive-camera-frame{height:clamp(105px,calc(var(--remote-height, 100dvh) * .43 - 20px),190px)}
   body[data-page="controller"] .remote-camera-layout .rc-joystick{
-    width:clamp(104px,18cqw,142px);
-    height:clamp(104px,18cqw,142px);
+    width:clamp(90px,18cqw,142px);
+    height:clamp(90px,18cqw,142px);
+  }
+  body[data-page="controller"] .remote-camera-layout .rc-stick{
+    width:56px;
+    height:56px;
+    left:calc(50% - 28px);
+    top:calc(50% - 28px);
   }
   .remote-camera-layout .twin-speed .twin-gauge span{display:none}
   .remote-camera-layout .twin-speed .twin-lock{white-space:nowrap}
@@ -78,3 +84,46 @@ body[data-page="controller"] .remote-camera-layout .twin-gauge{width:auto;height
   .remote-camera-layout .twin-toolbar>span{display:flex}
 }
 @media (prefers-reduced-motion:reduce){.drive-camera-scene{transition:none}}
+
+/* Keep the handheld controller in landscape even when browser rotation is locked. */
+@media (max-width:670px) and (orientation:portrait){
+  body[data-page="controller"]{overflow:hidden;height:100dvh}
+  body[data-page="controller"] .mobile-review{padding:0;min-height:0}
+  body[data-page="controller"] .remote-screen{
+    --remote-rotated:1;
+    --remote-height:100dvw;
+    position:fixed;
+    left:50%;
+    top:50%;
+    width:100dvh;
+    height:100dvw;
+    min-height:0;
+    max-width:none;
+    margin:0;
+    border:0;
+    border-radius:0;
+    transform:translate(-50%,-50%) rotate(90deg);
+  }
+  body[data-page="controller"] .remote-screen .mobile-content{
+    height:100%;
+    min-height:0;
+    padding:8px 18px 10px;
+  }
+  body[data-page="controller"] .remote-screen .phone-status,
+  body[data-page="controller"] .remote-screen .phone-home-indicator,
+  body[data-page="controller"] .remote-screen [data-remote-layout]{display:none}
+  body[data-page="controller"] .rc-device-actions{margin-right:0}
+  body[data-page="controller"] .rc-topbar{height:30px}
+  body[data-page="controller"] .rc-device-line{padding:6px 0;min-height:24px}
+  body[data-page="controller"] .remote-camera-layout .twin-toolbar{position:static}
+  body[data-page="controller"] .remote-camera-layout .twin-toolbar>span{display:flex}
+  body[data-page="controller"] .modal-wrap{
+    inset:auto;
+    left:50%;
+    top:50%;
+    width:100dvh;
+    height:100dvw;
+    transform:translate(-50%,-50%) rotate(90deg);
+    align-items:center;
+  }
+}
