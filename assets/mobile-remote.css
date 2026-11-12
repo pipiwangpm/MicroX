@@ -32,6 +32,7 @@ body[data-page="controller"].remote-wide .remote-screen .mobile-content {
   display:flex; flex-direction:column; align-items:center; justify-content:space-between;
   gap:10px; padding:14px; background:#f3f6ed;
 }
+.handset-drive { justify-content:flex-start; }
 .handset-panel-head { display:flex; align-items:center; justify-content:space-between; gap:7px; width:100%; min-height:26px; }
 .handset-panel-head h2 { margin:0; font-size:15px; white-space:nowrap; }
 .handset-panel-head > span { color:var(--handset-muted); font-size:11px; white-space:nowrap; }
@@ -73,9 +74,9 @@ body[data-page="controller"].remote-wide .remote-screen .mobile-content {
 .handset-gears { display:flex; width:100%; justify-content:center; gap:3px; margin-top:6px; padding:3px; border:1px solid var(--handset-line); border-radius:9px; }
 .handset-gears button { flex:1; padding:6px 4px; border:0; border-radius:5px; color:#4a5e4c; background:transparent; font-size:11px; white-space:nowrap; }
 .handset-gears button[aria-pressed="true"] { color:#263822; background:#dcebcf; font-weight:700; }
-.handset-lock,.handset-stop { display:flex; justify-content:center; align-items:center; gap:7px; min-height:36px; padding:5px; border-radius:8px; font-size:12px; font-weight:650; }
-.handset-lock { border:1px solid #cedacb; color:#405c46; background:#f1f5ed; }
-.handset-lock[aria-pressed="true"] { background:#d9e9cc; color:#263822; }
+.handset-start,.handset-stop { display:flex; justify-content:center; align-items:center; gap:7px; min-height:36px; padding:5px; border-radius:8px; font-size:12px; font-weight:650; }
+.handset-start { border:1px solid #cedacb; color:#405c46; background:#f1f5ed; }
+.handset-start:disabled { opacity:.58; }
 .handset-stop { border:1px solid #e7ad9f; background:#f9ddd5; color:#803628; font-size:14px; }
 .handset-footer { display:flex; justify-content:space-between; gap:8px; color:var(--handset-muted); font-size:11px; }
 .handset-deck button:disabled { opacity:.58; }
@@ -89,7 +90,7 @@ body[data-page="controller"].remote-wide .remote-screen .mobile-content {
   }
   .handset-panel { --dial:clamp(100px, calc(var(--handset-height) - 221px), 174px); gap:5px; padding:8px 11px; }
   .handset-center { gap:5px; padding:7px 9px; }
-  .handset-lock,.handset-stop { min-height:30px; }
+  .handset-start,.handset-stop { min-height:30px; }
 }
 @media (orientation:portrait) and (max-width:670px) {
   body[data-page="controller"] { overflow:hidden; height:100dvh; }
@@ -127,6 +128,6 @@ body[data-page="controller"].remote-wide .remote-screen .mobile-content {
   .handset-panel{--dial:clamp(90px,calc(var(--handset-height) - 210px),145px);padding:6px;gap:3px}
   .handset-center{padding:5px 8px;gap:3px}.handset-speed{gap:2px}.handset-speed strong{font-size:30px}
   .handset-gears{margin-top:2px;padding:2px}.handset-gears button{padding:4px}
-  .handset-lock,.handset-stop{min-height:24px;padding:3px;font-size:12px}
+  .handset-start,.handset-stop{min-height:24px;padding:3px;font-size:12px}
   .handset-actions{padding:5px 9px}.handset-action-buttons button{min-height:28px}.handset-footer{font-size:9px}
 }
