@@ -41,3 +41,5 @@ Keys: 0 initialize; 1 sit/stand toggle; 2 left kick; 3 right kick; 4 forward rol
 Pose release currently holds the last head/torso angle, with separate neutral controls. Angles, durations, initialization semantics, and action completion are prototype values pending hardware confirmation. The simulator visualizes independent head/torso motion, left/right kicks, bending, and mouth state. The real-device adapter records prototype commands and does not transmit to hardware.
 
 Developer UI cleanup: SN binding is temporarily omitted from the testing view. Real-device walking speed is edited only in the advanced motion parameters; the simulator retains its speed slider.
+
+Prototype onboarding shortcut: both Bluetooth Connect and Send to Robot are enabled without selecting a device or entering network details. Either button uses demonstration defaults and enters debugging directly. No real pairing or network provisioning is performed.
