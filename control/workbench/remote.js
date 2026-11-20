@@ -17,7 +17,7 @@ const rcController=new rcProtocol.Controller({
   if(command.type==='mode')log('切换为'+(command.mode==='walk'?'行走':'躯干')+'模式');
  }
 });
-wbMotion=function(){rcController.state.speed=engState().params.speed;rcController.state.turn=engState().params.turn;return rcProtocol.render(rcController)};
+wbMotion=function(){rcController.state.speed=engState().params.speed;rcController.state.turn=engState().params.turn;return rcProtocol.render(rcController,{speedControl:false})};
 const rcBaseRender=workbenchRender;
 workbenchRender=function(){rcRendering=true;try{if(!connected)rcController.reset();else if(!rcAvailable()&&(rcController.inputs.size||rcController.state.busy))rcController.stop(false);rcBaseRender()}finally{rcRendering=false}};
 handlers.rcStop=()=>rcController.stop();

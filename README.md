@@ -39,3 +39,5 @@ Both debugging modes use `assets/raydino-remote.js` for state, input handling, a
 Keys: 0 initialize; 1 sit/stand toggle; 2 left kick; 3 right kick; 4 forward roll; 5 bend/straighten; 6 mouth open/close; 7 recover; Space stop; H head neutral; B torso neutral. Recovery can interrupt an action. Sitting permits sit/stand and mouth controls, with recovery and stop remaining available. Normal action completion does not require recovery or show a success popup.
 
 Pose release currently holds the last head/torso angle, with separate neutral controls. Angles, durations, initialization semantics, and action completion are prototype values pending hardware confirmation. The simulator visualizes independent head/torso motion, left/right kicks, bending, and mouth state. The real-device adapter records prototype commands and does not transmit to hardware.
+
+Developer UI cleanup: SN binding is temporarily omitted from the testing view. Real-device walking speed is edited only in the advanced motion parameters; the simulator retains its speed slider.
