@@ -14,7 +14,7 @@
   const network=setupState();network.done=true;network.status='connected';network.ssid||='已连接网络';
   engState().deviceName=device.deviceName||'我的 RayDino';save();
  }
- if(!setupState().done){setupScreen='setup'}else setupScreen=view==='maintenance'?'maintenance':view==='connection'?'setup':'control';
+ if(!connected||!setupState().done){setupScreen='setup'}else setupScreen=view==='maintenance'?'maintenance':view==='connection'?'setup':'control';
  if(setupScreen==='maintenance')wbEngOpen=true;
  function title(){return {setup:'连接与配网',control:'测试标定',maintenance:'工程维护'}[setupScreen]}
  function navLink(label,href,active,ic){return `<a class="control-nav ${active?'active':''}" href="${href}">${icon(ic)}<span>${label}</span></a>`}
