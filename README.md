@@ -15,14 +15,18 @@ RayDino 使用按产品外观搭建的简化三维关节模型，展示步态、
 App 浅色横屏遥控器和 Web 手动控制均提供身体动作入口。坐下时需先起立再移动，动作执行期间与移动和玩法启动互锁，停止按钮取消待完成动作。三维仿真展示踢腿、前滚翻和蹲下夹取物品的关节动画；这些为原型动画，不代表物理仿真或真实机器人已接入。
 
 
-## Integrated calibration workbench (2026-11-20)
+## Developer debugging flow (2026-11-20)
 
-- `control/workbench.html`: Bluetooth onboarding, Wi-Fi provisioning, calibration, hardware commands, remote control, and SN.
-- `control/workbench.html?view=maintenance`: device name, CSV, OTA / firmware, and logs.
-- `control/workbench.html?view=connection`: connection management.
+After login, choose **real-device debugging** or the **simulator**. Real-device debugging starts with Bluetooth pairing and Wi-Fi provisioning. Only a successful network connection exposes the three real-device sections: calibration, engineering maintenance, and plays.
 
-The real-device navigation and existing controller links now lead to this workbench. Simulation keeps its original controller. Login and real-device connection state are shared with the platform. Entering calibration stops a running play; disconnecting clears the platform connection. Wi-Fi passwords are never persisted or logged.
+- `control/start.html`: login and mode selection.
+- `control/workbench.html`: onboarding when offline; calibration and remote control when online.
+- `control/workbench.html?view=maintenance`: device name, network reprovisioning, CSV, OTA / firmware, logs, and records.
+- `control/apps.html`: install and run real-device plays using the same connection.
+- `control/simulator.html`: one 3D scene with floating control, play, device, and log panels. Older simulation home/controller/play/device links redirect here.
 
-This is an interactive prototype: Bluetooth, Wi-Fi, telemetry, commands, SN, and firmware operations use demonstration data. The camera modal shows an illustrative first-person scene. Hardware protocols are not connected. Joint IDs 1-15 are stable prototype numbers pending actual bus mapping.
+Real-device navigation contains only calibration, engineering maintenance, and plays. The former home, controller, and device-setting pages redirect into these sections. Top-level production actions (next robot, export, logout) are removed from the developer flow. Login never skips mode selection.
 
-Implementation: `control/workbench/`; platform bridge: `platform.js`; platform styling: `platform.css`.
+Wi-Fi passwords are never persisted or logged. Calibration records are isolated from the standalone prototype. Bluetooth, network provisioning, telemetry, commands, SN, and firmware operations use demonstration data; real hardware protocols are not connected. The camera modal shows an illustrative first-person scene. Joint IDs 1-15 are fixed prototype numbers pending actual bus mapping.
+
+The workbench lives in `control/workbench/`. Shared navigation and floating-panel adaptation are in `assets/control-flow.js` and `assets/control-flow.css`; onboarding and host connection state are bridged in `control/workbench/platform.js`.
