@@ -145,24 +145,28 @@ function createArena() {
     shadow.position.set(robot.root.position.x, .009, robot.root.position.z);
     const action=state.action||'';
     const durations={sitting:1200,standing:1200,kick:1200,roll:2200,pick:2600};
-    const progress=action?THREE.MathUtils.clamp((performance.now()-state.actionStart)/durations[action],0,1):0;
+    const progress=action?THREE.MathUtils.clamp((performance.now()-state.actionStart)/(state.actionDuration||durations[action]||900),0,1):0;
     const ease=t=>t*t*(3-2*t);
     let crouch=posture==='sitting'?1:0;
     if(action==='sitting')crouch=ease(progress);
     if(action==='standing')crouch=1-ease(progress);
     if(action==='pick')crouch=Math.sin(Math.PI*progress)*.95;
     const swing=moving?Math.sin(time/95)*.28:0;
-    const kick=action==='kick'?Math.sin(Math.PI*progress)**2:0;
+    const kick=['kick','kickLeft','kickRight'].includes(action)?Math.sin(Math.PI*progress)**2:0;
+    let bend=state.bent?1:0;if(action==='bend')bend=state.bent?1-ease(progress):ease(progress);if(action==='recover'||action==='init'){crouch*=1-ease(progress);bend*=1-ease(progress)}
+    const neutral=(action==='recover'||action==='init')?1-ease(progress):1;
     const roll=action==='roll'?ease(progress):0;
     const tucked=action==='roll'?Math.sin(Math.PI*progress):crouch;
     const height=action==='roll'?.81+Math.sin(Math.PI*progress)*1.05:.81-crouch*.32+Math.abs(swing)*.03;
     robot.body.position.y+=(height-robot.body.position.y)*.16;
     // Rotate the articulated body around its center, then return to standing.
-    robot.body.rotation.x=-roll*Math.PI*2;
-    robot.head.rotation.x+=((-crouch*.35)-robot.head.rotation.x)*.17;
-    robot.jaw.rotation.x=action==='pick'?Math.sin(Math.PI*progress)*-.38:0;
+    robot.body.rotation.x=-roll*Math.PI*2-bend*.65;
+    robot.body.rotation.y+=(-THREE.MathUtils.degToRad(state.bodyYaw||0)*neutral-robot.body.rotation.y)*.17;
+    robot.head.rotation.x+=((-crouch*.35-THREE.MathUtils.degToRad(state.headPitch||0)*neutral)-robot.head.rotation.x)*.17;
+    robot.head.rotation.y+=(-THREE.MathUtils.degToRad(state.headYaw||0)*neutral-robot.head.rotation.y)*.17;
+    robot.jaw.rotation.x=action==='pick'?Math.sin(Math.PI*progress)*-.38:state.mouthClosed?0:-.3;
     robot.legs.forEach(({ hip, knee, foot }, index)=>{
-      const legKick=index===0?kick:0;
+      const legKick=index===(action==='kickRight'?1:0)?kick:0;
       hip.rotation.x+=((-tucked*.95+swing*(index?-1:1)+legKick*1.2)-hip.rotation.x)*.2;
       knee.rotation.x+=((tucked*1.77+Math.abs(swing)*.55+legKick*.28)-knee.rotation.x)*.2;
       foot.rotation.x=-hip.rotation.x-knee.rotation.x;

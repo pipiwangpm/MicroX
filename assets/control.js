@@ -126,6 +126,7 @@ function pcController() {
 }
 
 function deskDriveStop() {
+  if(window.RayDinoRemoteActive)return;
   clearTimeout(deskDriveTimer);
   deskDriveButton?.classList.remove('pressed');
   deskDriveButton = null;
@@ -179,8 +180,8 @@ function keyboardUi(){const i=document.getElementById('keyboard-indicator');if(i
 function releaseKeyboard(disarm=false){if(typeof heldDriveKeys==='undefined')return;heldDriveKeys.clear();clearInterval(keyboardHeartbeat);keyboardHeartbeat=null;deskDriveStop();if(disarm)keyboardArmed=false;keyboardUi()}
 function driveFromKeyboard(){if(!keyboardArmed||!heldDriveKeys.size)return;const dir=[...heldDriveKeys.values()].at(-1);const b=document.querySelector('[data-desktop-drive="'+dir+'"]');if(b&&!b.disabled){if(deskDriveButton!==b)deskDriveStart(b);clearTimeout(deskDriveTimer)}}
 document.addEventListener('click',e=>{if(e.target.closest('[data-keyboard-arm]')){keyboardArmed=!keyboardArmed;if(!keyboardArmed)releaseKeyboard();keyboardUi()}if(e.target.closest('[data-desktop-drive-stop],[data-pc-stop]'))releaseKeyboard()});
-document.addEventListener('keydown',e=>{if((page!=='controller'&&!isPlaySimulation())||!keyboardArmed||e.ctrlKey||e.metaKey||e.altKey)return;if(e.target.closest('input,textarea,select,[contenteditable="true"],[role="textbox"]')){releaseKeyboard();return}if(isPlaySimulation()&&!e.repeat){const control={KeyR:'[data-sim-posture]:enabled',KeyC:'[data-arena-follow]',Home:'[data-arena-reset]'}[e.code];if(control){e.preventDefault();document.querySelector(control)?.click();return}}const dirs={KeyW:'forward',ArrowUp:'forward',KeyS:'backward',ArrowDown:'backward',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right'};if(e.code==='Space'||e.code==='Escape'){e.preventDefault();releaseKeyboard(e.code==='Escape');return}if(!dirs[e.code])return;e.preventDefault();if(e.repeat)return;heldDriveKeys.set(e.code,dirs[e.code]);driveFromKeyboard();if(!keyboardHeartbeat)keyboardHeartbeat=setInterval(driveFromKeyboard,100)});
-document.addEventListener('keyup',e=>{if(!heldDriveKeys.has(e.code))return;e.preventDefault();heldDriveKeys.delete(e.code);if(heldDriveKeys.size)driveFromKeyboard();else releaseKeyboard()});
+document.addEventListener('keydown',e=>{if(window.RayDinoRemoteActive)return;if((page!=='controller'&&!isPlaySimulation())||!keyboardArmed||e.ctrlKey||e.metaKey||e.altKey)return;if(e.target.closest('input,textarea,select,[contenteditable="true"],[role="textbox"]')){releaseKeyboard();return}if(isPlaySimulation()&&!e.repeat){const control={KeyR:'[data-sim-posture]:enabled',KeyC:'[data-arena-follow]',Home:'[data-arena-reset]'}[e.code];if(control){e.preventDefault();document.querySelector(control)?.click();return}}const dirs={KeyW:'forward',ArrowUp:'forward',KeyS:'backward',ArrowDown:'backward',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right'};if(e.code==='Space'||e.code==='Escape'){e.preventDefault();releaseKeyboard(e.code==='Escape');return}if(!dirs[e.code])return;e.preventDefault();if(e.repeat)return;heldDriveKeys.set(e.code,dirs[e.code]);driveFromKeyboard();if(!keyboardHeartbeat)keyboardHeartbeat=setInterval(driveFromKeyboard,100)});
+document.addEventListener('keyup',e=>{if(window.RayDinoRemoteActive)return;if(!heldDriveKeys.has(e.code))return;e.preventDefault();heldDriveKeys.delete(e.code);if(heldDriveKeys.size)driveFromKeyboard();else releaseKeyboard()});
 window.addEventListener('blur',()=>releaseKeyboard(!isPlaySimulation()));window.addEventListener('pagehide',()=>releaseKeyboard(true));document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseKeyboard(!isPlaySimulation())});document.addEventListener('focusin',e=>{if(e.target.closest('input,textarea,select,[contenteditable="true"]'))releaseKeyboard()});
 
 document.addEventListener('click', event => {
@@ -196,6 +197,7 @@ if(session.signedIn()){
  else if(!isSimMode()&&session.connected()&&['home','controller','expressions','device'].includes(page))redirect='workbench.html?view='+ (page==='device'?'maintenance':'control');
  else if(!isSimMode()&&!session.connected())redirect='workbench.html?view=connection';
 }
+installRayDinoSimulator();
 const originalPcRender=pcRender;pcRender=function(){originalPcRender();applyControlFlow()};
 const renderedSimulation = isSimMode();
 if (redirect) location.replace(redirect);

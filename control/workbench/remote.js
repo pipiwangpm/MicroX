@@ -1,17 +1,32 @@
 'use strict';
-function rcHardware(id,op){if(!engGuard())return;const item=hardware.find(h=>h[0]===id);if(!item)return;const labels={record:'录音',play:id==='mic'?'回放':'播放',open:'打开',close:'关闭',read:'读取',off:'关闭',low:'低挡',mid:'中挡',high:'高挡',red:'红色',green:'绿色',blue:'蓝色',white:'白色'};log(`${item[1]}：${labels[op]}指令已下发`);s.hw[id]={command:op,label:labels[op],accepted:true,time:now()};hwPending=null;actPending=null;startJob(item[1]+' · '+labels[op],900,()=>{log(`${item[1]}：${labels[op]}指令已受理`);toast('指令已下发')})}
-function rcAction(name){if(!engGuard())return;const move=['前进','后退','向左横移','向右横移','左转','右转'].includes(name);const p=engState().params;log(`${name}指令已下发${move?'，持续 '+p.secs+' s':''}`);s.acts[name]={command:name,...(name==='坐下/起立'?{skill:'sit_toggle'}:{}),accepted:true,time:now()};engState().body=move?'运动中':name;actPending=null;hwPending=null;startJob(name,move?p.secs*1000:900,()=>{engState().body='待机';log(move?`${name}定时结束，零速度指令已下发`:`${name}指令已受理`)} )}
-handlers.rcStop=function(){if(!connected)return;cancelJob('遥控停止');engState().body='待机';log('遥控停止：零速度指令已下发');render()};
+const rcProtocol=window.RayDinoRemote;
+let rcRendering=false,rcLastVector='';
+function rcAvailable(){return ready()&&(typeof setupScreen==='undefined'||setupScreen==='control')&&!$('#modal-root')?.children.length}
+const rcController=new rcProtocol.Controller({
+ available:rcAvailable,
+ onChange(kind){if(kind==='input')rcProtocol.paint(rcController,document);else if(!rcRendering)render()},
+ onSpeed(speed){engState().params.speed=speed;const field=$('#eng-speed');if(field)field.value=String(speed);save()},
+ onCommand(command){
+  if(!connected)return;
+  const moving=command.type==='motion'&&(command.vx||command.vy||command.yaw);
+  if(command.type==='action'){engState().body=command.label;s.acts[command.label]={command:command.action,target:command.target,accepted:true,time:now()};log(command.label+'指令已下发')}
+  if(command.type==='complete'){engState().body='待机';log(rcProtocol.labels[command.action]+'已完成')}
+  if(command.type==='motion'){const next=JSON.stringify(command);if(next!==rcLastVector){rcLastVector=next;engState().body=moving?'运动中':'待机';log(moving?'行走控制：vx='+command.vx.toFixed(2)+'，vy='+command.vy.toFixed(2)+'，转向='+command.yaw.toFixed(2):'行走输入已停止')}}
+  if(command.type==='pose')s.acts['躯干控制']={...command,time:now()};
+  if(command.type==='stop'){engState().body='待机';save()}
+  if(command.type==='mode')log('切换为'+(command.mode==='walk'?'行走':'躯干')+'模式');
+ }
+});
+wbMotion=function(){rcController.state.speed=engState().params.speed;rcController.state.turn=engState().params.turn;return rcProtocol.render(rcController)};
+const rcBaseRender=workbenchRender;
+workbenchRender=function(){rcRendering=true;try{if(!connected)rcController.reset();else if(!rcAvailable()&&(rcController.inputs.size||rcController.state.busy))rcController.stop(false);rcBaseRender()}finally{rcRendering=false}};
+handlers.rcStop=()=>rcController.stop();
+const rcBaseStop=handlers.stop;handlers.stop=()=>{rcController.stop(false);if(typeof setupScreen!=='undefined'&&setupScreen==='control'&&!busy){render();return}rcBaseStop()};
+rcProtocol.bind({document,window,controller:rcController,active:()=>typeof setupScreen==='undefined'||setupScreen==='control',blocked:()=>!!$('#modal-root')?.children.length});
+function rcHardware(id,op){if(!engGuard())return;rcController.stop(false);const item=hardware.find(h=>h[0]===id);if(!item)return;const labels={record:'录音',play:id==='mic'?'回放':'播放',open:'打开',close:'关闭',read:'读取',off:'关闭',low:'低挡',mid:'中挡',high:'高挡',red:'红色',green:'绿色',blue:'蓝色',white:'白色'};log(`${item[1]}：${labels[op]}指令已下发`);s.hw[id]={command:op,label:labels[op],accepted:true,time:now()};hwPending=null;actPending=null;startJob(item[1]+' · '+labels[op],900,()=>{log(`${item[1]}：${labels[op]}指令已受理`);toast('指令已下发')})}
 runHw=function(id){rcHardware(id,({mic:'record',speaker:'play',camera:'open',tof:'read',fan:'low',led:'red'})[id])};
+function rcAction(name){const id=Object.entries(rcProtocol.labels).find(([,label])=>label===name)?.[0];if(id)return rcController.action(id);return false}
 runAct=rcAction;
-document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;if(b.dataset.rcHw)rcHardware(b.dataset.rcHw,b.dataset.rcOp);if(b.dataset.rcAction)rcAction(b.dataset.rcAction)});
-const rcKeys=Object.fromEntries(Object.entries(rcShortcuts).map(([action,[label,code]])=>[code,action]));
-Object.assign(rcKeys,{ArrowUp:'前进',ArrowDown:'后退',ArrowLeft:'左转',ArrowRight:'右转'});
-const rcMovement=['前进','后退','向左横移','向右横移','左转','右转'];
-let rcHeld=null;
-function rcKeyTarget(e){return (typeof setupScreen!=='undefined'&&setupScreen!=='control')||['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)||e.target.isContentEditable||e.isComposing||e.ctrlKey||e.altKey||e.metaKey||document.querySelector('#modal-root')?.children.length}
-document.addEventListener('keydown',e=>{if(rcKeyTarget(e))return;if(e.code==='Space'){if(!connected||e.repeat)return;e.preventDefault();rcHeld=null;handlers.rcStop();return}const command=rcKeys[e.code];if(!command)return;e.preventDefault();if(e.repeat||!ready())return;if(rcMovement.includes(command))rcHeld=e.code;rcAction(command);document.querySelector(`[data-rc-action="${command}"]`)?.classList.add('is-keydown')});
-document.addEventListener('keyup',e=>{const command=rcKeys[e.code];if(command)document.querySelector(`[data-rc-action="${command}"]`)?.classList.remove('is-keydown');if(rcHeld===e.code){rcHeld=null;if(engState().body==='运动中')handlers.rcStop()}});
-window.addEventListener('blur',()=>{if(rcHeld){rcHeld=null;handlers.rcStop()}});
-
+document.addEventListener('click',event=>{const button=event.target.closest('button');if(button&&!button.disabled&&button.dataset.rcHw)rcHardware(button.dataset.rcHw,button.dataset.rcOp)});
+window.addEventListener('pagehide',()=>rcController.reset());
 workbenchRender();

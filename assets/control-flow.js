@@ -1,6 +1,7 @@
 let simFloatingPanel=new URLSearchParams(location.search).get('panel')||'controls';
 const flowPanels={controls:'控制',plays:'玩法',devices:'设备',logs:'日志'};
 function setSimFloatingPanel(name){
+ if(simulatorRemote&&name!=='controls')simulatorRemote.releaseAll();
  simFloatingPanel=name;
  document.querySelectorAll('[data-flow-panel]').forEach(panel=>{panel.hidden=panel.dataset.flowPanel!==name});
  document.querySelectorAll('[data-flow-open]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.flowOpen===name)));
@@ -18,7 +19,7 @@ function applyControlFlow(){
  document.body.classList.add('flow-simulator');
  document.querySelector('.control-sidebar').remove();
  const header=document.querySelector('.control-topbar');
- header.innerHTML=`<a class="flow-brand" href="start.html"><img src="../assets/company-logo-footer.png" alt="Raydiculous"></a><strong>模拟器</strong><nav aria-label="模拟器工具">${Object.entries(flowPanels).map(([key,label])=>`<button class="btn small" data-flow-open="${key}" aria-pressed="false">${label}</button>`).join('')}</nav><a class="textlink" href="start.html">返回调试方式</a>`;
+ header.innerHTML=`<a class="flow-brand" href="start.html"><img src="../assets/company-logo-footer.png" alt="Raydiculous"></a><strong>模拟器</strong><nav aria-label="模拟器工具">${Object.entries(flowPanels).map(([key,label])=>`<button class="btn small" data-flow-open="${key}" aria-pressed="false">${label}</button>`).join('')}<button class="btn small flow-global-recover" data-dino-action="recover">恢复姿态</button><button class="btn small flow-global-stop" data-dino-action="stop">停止</button></nav><a class="textlink" href="start.html">返回调试方式</a>`;
  const host=document.querySelector('.control-content');
  const operation=host.querySelector('.workspace-operation');
  const preview=host.querySelector('.workspace-preview');
@@ -27,7 +28,7 @@ function applyControlFlow(){
  for(const [key,label] of Object.entries(flowPanels)){
   const panel=document.createElement('section');panel.className='flow-dialog';panel.dataset.flowPanel=key;panel.setAttribute('role','dialog');panel.setAttribute('aria-label',label);panel.innerHTML=`<header class="flow-dialog-header"><h2>${label}</h2><button class="btn small" data-flow-close aria-label="关闭${label}">关闭</button></header><div class="flow-dialog-body"></div>`;panels[key]=panel;
  }
- operation.querySelectorAll('.keyboard-panel,.body-action-panel').forEach(node=>panels.controls.lastElementChild.append(node));
+ operation.querySelectorAll('.dino-remote,.keyboard-panel,.body-action-panel').forEach(node=>panels.controls.lastElementChild.append(node));
  operation.querySelectorAll('.play-simulator').forEach(node=>panels.plays.lastElementChild.append(node));
  const media=preview.querySelector('.local-media');if(media)panels.devices.lastElementChild.append(media);
  const logs=preview.querySelector('.logs-panel');if(logs)panels.logs.lastElementChild.append(logs);

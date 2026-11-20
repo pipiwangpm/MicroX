@@ -30,3 +30,12 @@ Real-device navigation contains only calibration, engineering maintenance, and p
 Wi-Fi passwords are never persisted or logged. Calibration records are isolated from the standalone prototype. Bluetooth, network provisioning, telemetry, commands, SN, and firmware operations use demonstration data; real hardware protocols are not connected. The camera modal shows an illustrative first-person scene. Joint IDs 1-15 are fixed prototype numbers pending actual bus mapping.
 
 The workbench lives in `control/workbench/`. Shared navigation and floating-panel adaptation are in `assets/control-flow.js` and `assets/control-flow.css`; onboarding and host connection state are bridged in `control/workbench/platform.js`.
+
+
+## Shared remote interaction rules
+
+Both debugging modes use `assets/raydino-remote.js` for state, input handling, and UI. Initialize before ordinary remote commands. Walking mode maps W/S to forward/backward, A/D to lateral movement, and Q/E to turning. Trunk mode maps W/S to head pitch, A/D to head yaw, and Q/E to torso twist. M switches modes and ends old input. Releasing one input stops that channel while preserving any other held inputs.
+
+Keys: 0 initialize; 1 sit/stand toggle; 2 left kick; 3 right kick; 4 forward roll; 5 bend/straighten; 6 mouth open/close; 7 recover; Space stop; H head neutral; B torso neutral. Recovery can interrupt an action. Sitting permits sit/stand and mouth controls, with recovery and stop remaining available. Normal action completion does not require recovery or show a success popup.
+
+Pose release currently holds the last head/torso angle, with separate neutral controls. Angles, durations, initialization semantics, and action completion are prototype values pending hardware confirmation. The simulator visualizes independent head/torso motion, left/right kicks, bending, and mouth state. The real-device adapter records prototype commands and does not transmit to hardware.
