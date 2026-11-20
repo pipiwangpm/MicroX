@@ -13,3 +13,16 @@
 RayDino 使用按产品外观搭建的简化三维关节模型，展示步态、姿态和玩法交互。后续可接入实际关节模型、物理参数和控制策略。场景渲染使用 Three.js，许可见 assets/vendor/three-LICENSE.txt。
 
 App 浅色横屏遥控器和 Web 手动控制均提供身体动作入口。坐下时需先起立再移动，动作执行期间与移动和玩法启动互锁，停止按钮取消待完成动作。三维仿真展示踢腿、前滚翻和蹲下夹取物品的关节动画；这些为原型动画，不代表物理仿真或真实机器人已接入。
+
+
+## Integrated calibration workbench (2026-11-20)
+
+- `control/workbench.html`: Bluetooth onboarding, Wi-Fi provisioning, calibration, hardware commands, remote control, and SN.
+- `control/workbench.html?view=maintenance`: device name, CSV, OTA / firmware, and logs.
+- `control/workbench.html?view=connection`: connection management.
+
+The real-device navigation and existing controller links now lead to this workbench. Simulation keeps its original controller. Login and real-device connection state are shared with the platform. Entering calibration stops a running play; disconnecting clears the platform connection. Wi-Fi passwords are never persisted or logged.
+
+This is an interactive prototype: Bluetooth, Wi-Fi, telemetry, commands, SN, and firmware operations use demonstration data. The camera modal shows an illustrative first-person scene. Hardware protocols are not connected. Joint IDs 1-15 are stable prototype numbers pending actual bus mapping.
+
+Implementation: `control/workbench/`; platform bridge: `platform.js`; platform styling: `platform.css`.
