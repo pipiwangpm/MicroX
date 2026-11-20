@@ -62,84 +62,228 @@ document.addEventListener('submit',e=>{if(e.target.id!=='mobile-feedback-form')r
 Object.assign(ICONS,{wheel:'\uf1cd',power:'\uf011',volume:'\uf028',mic:'\uf130',gamepad:'\uf11b',smile:'\uf118',up:'\uf062',down:'\uf063',left:'\uf060',right:'\uf061',moon:'\uf186',music:'\uf001'});
 const basicExpressions=[['开心','smile','招呼'],['好奇','eye','摇头'],['困倦','moon','点头'],['打招呼','hand','招呼'],['点头','head','点头'],['摇头','rotate','摇头']];
 const basicDances=[['左右摇摆','rotate','摇头'],['节奏点头','music','点头'],['开心律动','smile','招呼']];
-let basicBusy=false,driveTimer=null,driveButton=null,drivePointer=null,headPose={yaw:0,pitch:0},travelSpeed=35;
+let basicBusy=false,headPose={yaw:0,pitch:0},travelSpeed=35;
 function basicBar(title){return `<div class="mobile-backbar"><a class="textlink" href="index.html" aria-label="返回机器人首页">${icon('back')}</a><span>${title}</span><a class="textlink" href="device.html" aria-label="设备设置">${icon('settings')}</a></div>`}
 function basicDevice(){return `<div class="basic-device"><div data-active-robot>${robot()}</div><span id="basic-state">${!mobile.connected?'设备未连接':mobile.sleeping?'机器人已休眠':mobile.running?appById(mobile.running).name+'运行中':'已就绪'}</span></div>${!mobile.connected?'<button class="btn orange basic-connect" data-mobile-connect><span>连接设备</span></button>':mobile.sleeping?'<button class="btn orange basic-connect" data-device-power><span>唤醒机器人</span></button>':mobile.running?'<button class="btn basic-connect" data-take-control><span>停止小程序，切换手动控制</span></button>':''}`}
 function mExpressions(){return basicBar('动作轮盘')+`<div class="wheel-device"><img src="../assets/robot-x3-green.png" alt="RayDino"><div><strong>我的 RayDino</strong>${status(mobile.connected,mobile.sleeping?'休眠中':'已就绪','未连接')}</div></div><div class="wheel-stage"><div class="action-wheel" role="group" aria-label="动作轮盘">${wheelActions.map(([name,glyph],i)=>{const start=i*45-112.5,end=start+45;const pts=['50% 50%'];for(let a=start;a<=end;a+=2.5)pts.push((50+50*Math.cos(a*Math.PI/180))+'% '+(50+50*Math.sin(a*Math.PI/180))+'%');const mid=(start+end)/2;return `<button class="wheel-sector ${wheelSelected===i?'selected':''}" style="clip-path:polygon(${pts.join(',')})" data-wheel="${i}" aria-label="${name}" aria-pressed="${wheelSelected===i}"><span class="wheel-sector-content" style="left:${50+36*Math.cos(mid*Math.PI/180)}%;top:${50+36*Math.sin(mid*Math.PI/180)}%">${icon(glyph)}<span>${name}</span></span></button>`}).join('')}<button class="wheel-center ${basicBusy?'executing':''}" data-wheel-center aria-label="${basicBusy?'停止动作':'播放所选动作'}"><span class="wheel-center-icon" id="wheel-center-icon">${icon(wheelActions[wheelSelected][1])}</span><strong id="wheel-selected-name">${wheelActions[wheelSelected][0]}</strong><span id="basic-state">${basicBusy?'正在执行':'点击播放'}</span></button></div></div><p class="wheel-hint">点选一个动作，和 RayDino 互动</p><button class="textlink wheel-stop" data-basic-stop>${icon('stop')}<span>停止动作</span></button>`}
 
-let remoteLocked=true;
-const remoteBody={posture:'standing',action:'',holding:false,timer:null};
-const bodyActions=[['sitting','坐下'],['standing','起立'],['kick','踢腿'],['roll','前滚翻'],['pick','蹲下夹东西']];
-function mobileBodyPanel(){
-  const blocked=!mobile.connected||mobile.sleeping||mobile.running||remoteLocked||!!remoteBody.action;
-  return `<section class="handset-actions" aria-label="身体动作"><div><strong>身体动作</strong><span role="status" id="body-action-state">${remoteBody.action?(remoteBody.action==='pick'&&remoteBody.holding?'放下物品':bodyActions.find(x=>x[0]===remoteBody.action)[1])+' · 执行中':remoteBody.holding?'已夹住物品':remoteBody.posture==='sitting'?'已坐下':'站立中'}</span></div><div class="handset-action-buttons">${bodyActions.map(([id,label])=>`<button data-body-action="${id}" aria-pressed="${id===remoteBody.posture}" ${blocked||(id===remoteBody.posture)||(remoteBody.posture==='sitting'&&id!=='standing')?'disabled':''}>${id==='pick'&&remoteBody.holding?'放下物品':label}</button>`).join('')}</div></section>`;
+let remoteNeedsInit = true;
+let remoteControlMode = 'walk';
+const trunkInput = {twist:0};
+const remoteWalk = {forward:0, strafe:0, turn:0};
+const remotePointers = {left:null, right:null};
+const remoteWalkTimers = {left:null, right:null};
+const remoteBody = {posture:'standing', action:'', bent:false, mouthClosed:false, timer:null};
+const bodyActions = [
+  ['kick_left', '左踢腿'],
+  ['posture_toggle', '坐下/起立'],
+  ['roll', '前滚翻'],
+  ['bend_toggle', '弯腰'],
+  ['mouth_toggle', '夹嘴'],
+  ['kick_right', '右踢腿']
+];
+
+function bodyActionLabel(id) {
+  if (id === 'bend_toggle') return remoteBody.bent ? '直起' : '弯腰';
+  if (id === 'mouth_toggle') return remoteBody.mouthClosed ? '松嘴' : '夹嘴';
+  return bodyActions.find(action => action[0] === id)?.[1] || '';
 }
-function stopMobileBody(){clearTimeout(remoteBody.timer);remoteBody.action='';document.querySelectorAll('[data-body-action]').forEach(b=>{b.disabled=!mobile.connected||mobile.sleeping||!!mobile.running||remoteLocked||b.dataset.bodyAction===remoteBody.posture||(remoteBody.posture==='sitting'&&b.dataset.bodyAction!=='standing')});const state=document.getElementById('body-action-state');if(state)state.textContent=remoteBody.holding?'已夹住物品':remoteBody.posture==='sitting'?'已坐下':'站立中'}
-function runMobileBody(id){
-  if(!bodyActions.some(x=>x[0]===id)||mobileDriveDisabled()||remoteBody.action||id===remoteBody.posture||(remoteBody.posture==='sitting'&&id!=='standing'))return;
-  basicStop(false);remoteBody.action=id;mobileRender();setBasicState('动作执行中');
-  remoteBody.timer=setTimeout(()=>{if(id==='sitting'||id==='standing')remoteBody.posture=id;if(id==='pick')remoteBody.holding=!remoteBody.holding;remoteBody.action='';mobileRender();setBasicState('动作已完成')},id==='roll'?2200:id==='pick'?2600:1200);
+
+function bodyActionBlocked(id) {
+  const unavailable = !mobile.connected || mobile.sleeping || mobile.running || remoteNeedsInit || remoteBody.action;
+  return !!unavailable || (remoteBody.posture === 'sitting' && !['posture_toggle', 'mouth_toggle'].includes(id));
 }
-document.addEventListener('click',event=>{const button=event.target.closest('[data-body-action]');if(button&&!button.disabled)runMobileBody(button.dataset.bodyAction)});
+
+function mobileBodyPanel() {
+  return `<section class="handset-actions" aria-label="身体动作" aria-busy="${!!remoteBody.action}">
+    <strong>身体动作</strong>
+    <div class="handset-action-buttons">${bodyActions.map(([id]) => {
+      const pressed = {
+        posture_toggle: remoteBody.posture === 'sitting',
+        bend_toggle: remoteBody.bent,
+        mouth_toggle: remoteBody.mouthClosed
+      }[id];
+      return `<button data-body-action="${id}" ${pressed === undefined ? '' : `aria-pressed="${pressed}"`} ${bodyActionBlocked(id) ? 'disabled' : ''}><span>${bodyActionLabel(id)}</span></button>`;
+    }).join('')}</div>
+  </section>`;
+}
+
+function stopMobileBody() {
+  clearTimeout(remoteBody.timer);
+  remoteBody.action = '';
+  document.querySelectorAll('[data-body-action]').forEach(button => {
+    button.disabled = bodyActionBlocked(button.dataset.bodyAction);
+  });
+}
+
+function runMobileBody(id) {
+  if (!bodyActions.some(action => action[0] === id) || bodyActionBlocked(id)) return;
+  const label = bodyActionLabel(id);
+  releaseJoystick();
+  releaseHeadPointer();
+  basicStop(false);
+  remoteBody.action = id;
+  mobileRender();
+  setBasicState(label + '执行中');
+  remoteBody.timer = setTimeout(() => {
+    if (id === 'posture_toggle') {
+      remoteBody.posture = remoteBody.posture === 'sitting' ? 'standing' : 'sitting';
+      remoteBody.bent = false;
+    }
+    if (id === 'bend_toggle') remoteBody.bent = !remoteBody.bent;
+    if (id === 'mouth_toggle') {
+      remoteBody.mouthClosed = !remoteBody.mouthClosed;
+    }
+
+    remoteBody.action = '';
+    mobileRender();
+    setBasicState('已就绪');
+  }, id === 'roll' ? 2200 : 900);
+}
+
+function runRemoteSetup(action) {
+  if (!['initialize', 'recover'].includes(action) || !mobile.connected) return;
+  if (action === 'initialize' && (mobile.sleeping || mobile.running || remoteBody.action || !remoteNeedsInit)) return;
+  releaseJoystick();
+  releaseHeadPointer();
+  basicStop(false);
+  if (action === 'recover') {
+    mobile.running = null;
+    mobile.sleeping = false;
+    mSave();
+  }
+  remoteBody.action = action;
+  mobileRender();
+  setBasicState(action === 'initialize' ? '初始化中' : '恢复姿态中');
+  remoteBody.timer = setTimeout(() => {
+    remoteNeedsInit = false;
+    remoteBody.posture = 'standing';
+    remoteBody.bent = false;
+    headPose = {yaw:0, pitch:0};
+    Object.assign(trunkInput, {twist:0});
+    remoteBody.action = '';
+    mobileRender();
+    setBasicState('已就绪');
+  }, 1200);
+}
+
+document.addEventListener('click', event => {
+  const button = event.target.closest('button');
+  if (!button || button.disabled) return;
+  if (button.dataset.bodyAction) runMobileBody(button.dataset.bodyAction);
+  if (button.dataset.remoteSetup) runRemoteSetup(button.dataset.remoteSetup);
+  if (button.hasAttribute('data-trunk-reset')) {
+    basicStop(false);
+    trunkInput.twist = 0;
+    mobileRender();
+  }
+  if (button.dataset.remoteMode) {
+    releaseJoystick();
+    releaseHeadPointer();
+    basicStop(false);
+    remoteControlMode = button.dataset.remoteMode;
+    mobileRender();
+  }
+});
+
 function mobileDriveDisabled() {
-  return !mobile.connected || mobile.sleeping || mobile.running || remoteLocked || !!remoteBody.action;
+  return !mobile.connected || mobile.sleeping || mobile.running || remoteNeedsInit || !!remoteBody.action;
 }
+
 function mController() {
   const disabled = mobileDriveDisabled() ? 'disabled' : '';
-  const state = !mobile.connected ? '未连接' : mobile.sleeping ? '休眠中' : mobile.running ? '玩法运行中' : remoteLocked ? '待启动' : '已就绪';
-  const statusAction = mobile.sleeping ? '<button data-device-power><span>唤醒</span></button>' :
-    mobile.running ? '<button data-take-control><span>手动接管</span></button>' : '';
-  const driveDirections = [['forward','前进','up'],['left','左转','left'],['right','右转','right'],['backward','后退','down']];
-  const headDirections = [['forward','抬头','up'],['left','向左转头','left'],['right','向右转头','right'],['backward','低头','down']];
+  const driveDisabled = disabled || (remoteBody.posture === 'sitting' ? 'disabled' : '');
+  const setupBlocked = !mobile.connected || mobile.sleeping || mobile.running || remoteBody.action;
+  const walking = remoteControlMode === 'walk';
+  const leftLabel = walking ? '前后 / 左右平移' : '头部控制';
+  const leftDisabled = walking ? driveDisabled : disabled;
+  const rightDisabled = walking ? driveDisabled : disabled;
+  const horizontal = headPose.yaw;
+  const vertical = headPose.pitch;
+  const statusAction = mobile.sleeping ? '<button class="handset-tool" data-device-power><span>唤醒</span></button>' :
+    mobile.running ? '<button class="handset-tool" data-take-control><span>手动接管</span></button>' : '';
+  const leftDirections = walking
+    ? [['forward','前进','up'],['left','左移','left'],['right','右移','right'],['backward','后退','down']]
+    : [['forward','向上','up'],['left','向左','left'],['right','向右','right'],['backward','向下','down']];
+  const rightDirections = walking ? [['left','左转','left'],['right','右转','right']] : [['left','向左扭动','left'],['right','向右扭动','right']];
   return `<header class="handset-bar">
     <a href="index.html" class="handset-icon" aria-label="返回机器人首页">${icon('back')}</a>
     <h1>遥控器</h1>
+    <div class="handset-modes" role="group" aria-label="控制模式">
+      ${[['walk','行走'],['trunk','躯干']].map(([mode,label]) => `<button data-remote-mode="${mode}" aria-pressed="${remoteControlMode === mode}" ${remoteBody.action ? 'disabled' : ''}><span>${label}</span></button>`).join('')}
+    </div>
     <div class="handset-link-state"><span class="handset-led" aria-hidden="true"></span><span>${mobile.connected ? '机器人已连接' : '机器人未连接'}</span></div>
     <a class="handset-icon" href="device.html" aria-label="设备设置">${icon('settings')}</a>
   </header>
-  <div class="handset-deck">
-    <section class="handset-panel handset-drive">
-      <div class="handset-panel-head"><h2>移动</h2></div>
-      <div class="rc-joystick ${disabled ? 'unavailable' : ''}" role="group" aria-label="移动摇杆">
-        <div class="rc-stick-track"></div>
-        ${driveDirections.map(([position, label, glyph]) => `<button class="rc-direction rc-${position}" data-drive="${position}" aria-label="${label}" ${disabled || (remoteBody.posture==='sitting'?'disabled':'')}>${icon(glyph)}</button>`).join('')}
-        <button class="rc-stick" data-joystick aria-label="拖动移动摇杆" ${disabled || (remoteBody.posture==='sitting'?'disabled':'')}><span class="rc-grip"></span></button>
-      </div>
-    </section>
-    <section class="handset-center" aria-label="遥控设置">
-      <div class="handset-status"><span id="basic-state" aria-live="polite">${state}</span>${statusAction}</div>
-      <div class="handset-speed">
-        <span>速度</span><strong>${travelSpeed}<small>%</small></strong>
-        <div class="handset-gears" role="group" aria-label="速度档位">
-          ${[[20,'低速'],[35,'中速'],[55,'高速']].map(([speed, label]) => `<button data-speed-gear="${speed}" aria-pressed="${travelSpeed === speed}" ${disabled}><span>${label}</span></button>`).join('')}
-        </div>
-      </div>
-      <button class="handset-start" data-remote-start ${!remoteLocked || !mobile.connected || mobile.sleeping || mobile.running || remoteBody.action ? 'disabled' : ''}>${icon('play')}<span>start</span></button>
+  <section class="handset-tools" aria-label="遥控设置">
+    <div class="handset-speed"><span>速度</span><div class="handset-gears" role="group" aria-label="速度档位">
+      ${[[20,'低速'],[35,'中速'],[55,'高速']].map(([speed, label]) => `<button data-speed-gear="${speed}" aria-pressed="${travelSpeed === speed}" ${disabled}><span>${label}</span></button>`).join('')}
+    </div></div>
+    <div class="handset-operation">
+      ${statusAction}
+      <button class="handset-tool" data-remote-setup="initialize" ${setupBlocked || !remoteNeedsInit ? 'disabled' : ''}><span>初始化</span></button>
+      <button class="handset-tool" data-remote-setup="recover" ${!mobile.connected ? 'disabled' : ''}><span>恢复姿态</span></button>
       <button class="handset-stop" data-basic-stop>${icon('stop')}<span>停止</span></button>
-    </section>
-    <section class="handset-panel handset-head">
-      <div class="handset-panel-head"><h2>头部</h2><button data-head-reset aria-label="姿态归零" ${disabled}>${icon('rotate')}<span>归零</span></button></div>
-      <div class="rc-joystick ${disabled ? 'unavailable' : ''}" role="group" aria-label="头部摇杆">
-        <div class="rc-stick-track"></div>
-        ${headDirections.map(([position, label, glyph]) => `<button class="rc-direction rc-${position}" data-pose-step="${glyph}" aria-label="${label}" ${disabled}>${icon(glyph)}</button>`).join('')}
-        <button class="rc-stick" data-head-joystick aria-label="拖动头部摇杆" style="translate:${headPose.yaw * .46}% ${-headPose.pitch * .46}%" ${disabled}><span class="rc-grip"></span></button>
+    </div>
+    <span class="remote-feedback" id="basic-state" role="status">${remoteNeedsInit ? '待初始化' : '已就绪'}</span>
+  </section>
+  <div class="handset-deck">
+    <section class="handset-panel handset-drive" data-remote-side="left">
+      <div class="handset-panel-head">
+        <h2>${leftLabel}</h2>
+        ${walking ? '' : `<button data-head-reset aria-label="${leftLabel}归零" ${disabled}>${icon('rotate')}<span>归零</span></button>`}
       </div>
-      <p class="handset-hint handset-pose"><span>左右 <output id="head-yaw-value">${headPose.yaw}%</output></span><span>俯仰 <output id="head-pitch-value">${headPose.pitch}%</output></span></p>
+      <div class="rc-joystick ${leftDisabled ? 'unavailable' : ''}" role="group" aria-label="左摇杆 · ${leftLabel}">
+        <div class="rc-stick-track"></div>
+        ${leftDirections.map(([position,label,glyph]) => `<button class="rc-direction rc-${position}" ${walking ? `data-drive="${position === 'left' || position === 'right' ? 'strafe_' + position : position}"` : `data-pose-step="${glyph}"`} aria-label="${walking ? label : leftLabel + label}" ${leftDisabled}>${icon(glyph)}</button>`).join('')}
+        <button class="rc-stick" data-joystick aria-label="拖动左摇杆" ${leftDisabled}><span class="rc-grip"></span></button>
+      </div>
+      ${walking ? '' : `<div class="handset-pose"><span>左右 <output id="remote-horizontal-value">${horizontal}%</output></span><span>俯仰 <output id="remote-vertical-value">${vertical}%</output></span></div>`}
+    </section>
+    <section class="handset-panel handset-head" data-remote-side="right">
+      <div class="handset-panel-head">
+        <h2>${walking ? '左右转向' : '身躯左右扭动'}</h2>
+        ${walking ? '' : `<button data-trunk-reset aria-label="身躯扭动归零" ${disabled}>${icon('rotate')}<span>归零</span></button>`}
+      </div>
+      <div class="rc-joystick stick-walk-turn ${rightDisabled ? 'unavailable' : ''}" role="group" aria-label="${walking ? '右摇杆 · 左右转向' : '右摇杆 · 身躯左右扭动'}">
+        <div class="rc-stick-track"></div>
+        ${rightDirections.map(([position,label,glyph]) => `<button class="rc-direction rc-${position}" ${walking ? `data-drive="${position}"` : `data-pose-step="${glyph}"`} aria-label="${label}" ${rightDisabled}>${icon(glyph)}</button>`).join('')}
+        <button class="rc-stick" data-head-joystick aria-label="拖动右摇杆" ${rightDisabled}><span class="rc-grip"></span></button>
+      </div>
+      ${walking ? '' : `<div class="handset-pose"><span>扭转 <output id="remote-twist-value">${trunkInput.twist}%</output></span></div>`}
     </section>
   </div>
-  ${mobileBodyPanel()}
-  <footer class="handset-footer"><span>移动摇杆松手即停</span><span>头部摇杆松手保持姿态</span></footer>`;
+  ${mobileBodyPanel()}`;
 }
+
 function setBasicState(text){const el=document.getElementById('basic-state');if(el)el.textContent=text}
 function basicReady(next){if(!mobile.connected){mConnect(()=>basicReady(next));return}if(mobile.sleeping){mobile.sleeping=false;mSave();mobileRender()}if(mobile.running){confirmDialog('切换互动方式？','将停止「'+appById(mobile.running).name+'」。','停止并切换',()=>{mobile.running=null;mSave();mobileRender();next()});return}next()}
-function basicStop(showToast=true){const hadBodyAction=!!remoteBody.action;stopMobileBody();document.querySelector('.wheel-center')?.classList.remove('executing');document.querySelector('.wheel-center')?.setAttribute('aria-label','播放所选动作');stopAnimation();clearTimeout(driveTimer);driveButton?.classList.remove('pressed');driveButton=null;basicBusy=false;const dr=document.querySelector('.basic-device .robot-visual');if(dr)dr.style.translate='';document.querySelectorAll('[data-expression],[data-dance]').forEach(x=>x.classList.remove('selected'));const stateText = !mobile.connected ? '设备未连接' : mobile.sleeping ? '机器人已休眠' : '已停止';if(page==='controller' && mobile.connected && !mobile.sleeping){setBasicState(mobile.running?'玩法运行中':remoteLocked?'待启动':stateText)}else setBasicState(stateText);document.querySelector('.rc-stick')?.style.removeProperty('translate');document.querySelector('.rc-joystick')?.classList.remove('engaged');const state=document.getElementById('drive-state');if(state)state.textContent='已停止';if(hadBodyAction&&page==='controller')mobileRender();if(showToast)toast('动作已停止')}
+function basicStop(showToast = true) {
+  const hadBodyAction = !!remoteBody.action;
+  stopMobileBody();
+  releaseRemoteStick('left');
+  releaseRemoteStick('right');
+  stopAnimation();
+  basicBusy = false;
+  document.querySelector('.wheel-center')?.classList.remove('executing');
+  document.querySelector('.wheel-center')?.setAttribute('aria-label', '播放所选动作');
+  document.querySelectorAll('[data-expression],[data-dance]').forEach(button => button.classList.remove('selected'));
+  const robotEl = document.querySelector('.basic-device .robot-visual');
+  if (robotEl) robotEl.style.translate = '';
+  setBasicState(!mobile.connected ? '设备未连接' : mobile.sleeping ? '机器人已休眠' : page === 'controller' && remoteNeedsInit ? '待初始化' : '已停止');
+  if (hadBodyAction && page === 'controller') mobileRender();
+  if (showToast && page !== 'controller') toast('动作已停止');
+}
 function runBasic(item,button,dance=false){basicReady(()=>{basicStop(false);basicBusy=true;const [name,,motion]=item;button=document.querySelector(dance?'[data-dance="'+basicDances.indexOf(item)+'"]':'[data-expression="'+basicExpressions.indexOf(item)+'"]');button?.classList.add('selected');setBasicState(name+' · 进行中');let left=dance?3:1;const step=()=>animate(motion,()=>{if(--left>0)step();else{basicBusy=false;button?.classList.remove('selected');setBasicState(name+' · 已完成')}});step()})}
 function applyHead(){const r=document.querySelector('.basic-device .robot-visual');if(r){r.style.rotate=(headPose.pitch/12)+'deg';r.style.transform='perspective(700px) rotateY('+headPose.yaw/5+'deg)'}setBasicState('头部姿态已调整')}
-function beginDrive(button){if(mobileDriveDisabled()||remoteBody.posture==='sitting')return;basicStop(false);driveButton=button;button.classList.add('pressed');const names={forward:'前进',backward:'后退',left:'左转',right:'右转'};setBasicState(names[button.dataset.drive]+'中');const robotEl=document.querySelector('.basic-device .robot-visual');if(robotEl){const d=Math.round(travelSpeed/3);robotEl.style.translate=button.dataset.drive==='forward'?'0 -'+d+'px':button.dataset.drive==='backward'?'0 '+d+'px':button.dataset.drive==='left'?'-'+d+'px 0':d+'px 0'}driveTimer=setTimeout(()=>basicStop(false),5000)}
-document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.hasAttribute('data-device-power')){if(!mobile.connected)return;const toggle=()=>{if(talkActive)setTalk(false);basicStop(false);mobile.sleeping=!mobile.sleeping;if(mobile.sleeping)mobile.running=null;mSave();mobileRender();toast(mobile.sleeping?'机器人已休眠':'机器人已唤醒')};if(!mobile.sleeping&&mobile.running)confirmDialog('让机器人休眠？','当前小程序将停止运行。','休眠',toggle);else toggle()}if(b.hasAttribute('data-mic-toggle')){mobile.mic=!mobile.mic;mSave();b.classList.toggle('on',mobile.mic);b.setAttribute('aria-checked',String(mobile.mic));b.querySelector('span:last-child').textContent=mobile.mic?'已开启':'已关闭'}if(b.hasAttribute('data-basic-stop')){const wasRunning=!!mobile.running;basicStop();mobile.running=null;mSave();if(page==='home'||(page==='controller'&&wasRunning))mobileRender()}if(b.hasAttribute('data-take-control'))basicReady(()=>setBasicState('已就绪'));if(b.dataset.expression!==undefined)runBasic(basicExpressions[Number(b.dataset.expression)],b);if(b.dataset.dance!==undefined)runBasic(basicDances[Number(b.dataset.dance)],b,true);if(b.hasAttribute('data-head-reset')){basicStop(false);headPose={yaw:0,pitch:0};mobileRender();setBasicState('姿态已复位')}if(b.dataset.drive&&e.detail===0){beginDrive(b);clearTimeout(driveTimer);driveTimer=setTimeout(()=>basicStop(false),350)}});
+
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.hasAttribute('data-device-power')){if(!mobile.connected)return;const toggle=()=>{if(talkActive)setTalk(false);basicStop(false);mobile.sleeping=!mobile.sleeping;if(mobile.sleeping)mobile.running=null;mSave();mobileRender();toast(mobile.sleeping?'机器人已休眠':'机器人已唤醒')};if(!mobile.sleeping&&mobile.running)confirmDialog('让机器人休眠？','当前小程序将停止运行。','休眠',toggle);else toggle()}if(b.hasAttribute('data-mic-toggle')){mobile.mic=!mobile.mic;mSave();b.classList.toggle('on',mobile.mic);b.setAttribute('aria-checked',String(mobile.mic));b.querySelector('span:last-child').textContent=mobile.mic?'已开启':'已关闭'}if(b.hasAttribute('data-basic-stop')){const wasRunning=!!mobile.running;basicStop();mobile.running=null;mSave();if(page==='home'||(page==='controller'&&wasRunning))mobileRender()}if(b.hasAttribute('data-take-control'))basicReady(()=>setBasicState('已就绪'));if(b.dataset.expression!==undefined)runBasic(basicExpressions[Number(b.dataset.expression)],b);if(b.dataset.dance!==undefined)runBasic(basicDances[Number(b.dataset.dance)],b,true);if(b.hasAttribute('data-head-reset')){basicStop(false);Object.assign(headPose,{yaw:0,pitch:0});mobileRender();setBasicState('姿态已复位')}});
 document.addEventListener('input',e=>{if(e.target.id==='speaker-volume'){mobile.volume=Number(e.target.value);document.getElementById('speaker-volume-value').textContent=mobile.volume+'%';mSave()}if(e.target.id==='travel-speed'){travelSpeed=Number(e.target.value);document.getElementById('travel-speed-value').textContent=travelSpeed+'%'}if(e.target.dataset.head){headPose[e.target.dataset.head]=Number(e.target.value);document.getElementById('head-'+e.target.dataset.head+'-value').textContent=e.target.value+'%';applyHead()}});
-document.addEventListener('pointerdown',e=>{const b=e.target.closest('[data-drive]');if(!b||b.disabled)return;e.preventDefault();b.setPointerCapture?.(e.pointerId);drivePointer=e.pointerId;beginDrive(b)});
-document.addEventListener('pointerup',e=>{if(driveButton&&(e.pointerId===joystickPointer||e.pointerId===drivePointer))basicStop(false)});document.addEventListener('pointercancel',()=>basicStop(false));window.addEventListener('blur',()=>basicStop(false));document.addEventListener('visibilitychange',()=>{if(document.hidden)basicStop(false)});window.addEventListener('pagehide',()=>basicStop(false));
+document.addEventListener('pointercancel',()=>basicStop(false));
+window.addEventListener('blur',()=>basicStop(false));
+document.addEventListener('visibilitychange',()=>{if(document.hidden)basicStop(false)});
+window.addEventListener('pagehide',()=>basicStop(false));
+
 let talkActive=false,playScope='all',wheelSelected=0;
 const wheelActions=[['开心','smile','招呼'],['好奇','eye','摇头'],['打招呼','hand','招呼'],['摇头','rotate','摇头'],['困倦','moon','点头'],['点头','head','点头'],['左右摇摆','music','摇头'],['开心律动','gamepad','招呼']];
 function mSoundSettings(){return `<section class="sound-controls device-sound" aria-label="声音设置"><div class="volume-control">${icon('volume')}<label for="speaker-volume">音量</label><input id="speaker-volume" aria-label="扬声器音量" type="range" min="0" max="100" value="${mobile.volume}" ${!mobile.connected?'disabled':''}><output id="speaker-volume-value">${mobile.volume}%</output></div><button class="mic-toggle ${mobile.mic?'on':''}" data-mic-toggle role="switch" aria-label="麦克风" aria-checked="${mobile.mic}" ${!mobile.connected?'disabled':''}>${icon('mic')}<span>${mobile.mic?'已开启':'已关闭'}</span></button></section>`}
@@ -149,29 +293,154 @@ document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
 window.addEventListener('pagehide',()=>{talkActive=false});
 mobileRender();
 
-let joystickPointer=null,joystickDirection=null;
 function remotePointerOffset(event, pad) {
   const box = pad.getBoundingClientRect();
   const x = event.clientX - box.left - box.width / 2;
   const y = event.clientY - box.top - box.height / 2;
   const screen = document.querySelector('.remote-screen');
   const rotated = screen && getComputedStyle(screen).getPropertyValue('--remote-rotated').trim() === '1';
-  return rotated ? {x:y, y:-x} : {x, y};
+  return rotated ? {x:y, y:-x} : {x,y};
 }
-function moveJoystick(e){const stick=document.querySelector('[data-joystick]');if(!stick||stick.disabled)return;const pad=stick.parentElement,box=pad.getBoundingClientRect();let {x,y}=remotePointerOffset(e,stick.parentElement);const distance=Math.hypot(x,y),limit=box.width*.24;if(distance>limit){x*=limit/distance;y*=limit/distance}if(distance<10){basicStop(false);joystickDirection=null}else{const direction=Math.abs(x)>Math.abs(y)?(x<0?'left':'right'):(y<0?'forward':'backward');if(direction!==joystickDirection||!driveButton){beginDrive(document.querySelector('[data-drive="'+direction+'"]'));joystickDirection=direction}pad.classList.add('engaged')}stick.style.translate=x+'px '+y+'px'}
-document.addEventListener('pointerdown',e=>{const stick=e.target.closest('[data-joystick]');if(!stick||stick.disabled)return;e.preventDefault();joystickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);moveJoystick(e)});
-document.addEventListener('pointermove',e=>{if(e.pointerId===joystickPointer)moveJoystick(e)});
-function releaseJoystick(e){if(e?.type?.startsWith('pointer')&&e.pointerId!==joystickPointer)return;if(joystickPointer!==null){joystickPointer=null;joystickDirection=null;basicStop(false)}}
-document.addEventListener('pointerup',releaseJoystick);document.addEventListener('pointercancel',releaseJoystick);window.addEventListener('blur',releaseJoystick);window.addEventListener('pagehide',releaseJoystick);window.addEventListener('resize',releaseJoystick);
-window.addEventListener('resize',()=>{if(page==='controller')basicStop(false)});
 
-let headPointer=null;
-function updateHeadControl(){document.getElementById('head-yaw-value').textContent=headPose.yaw+'%';document.getElementById('head-pitch-value').textContent=headPose.pitch+'%';const knob=document.querySelector('[data-head-joystick]');if(knob){const limit=knob.parentElement.clientWidth*.23;knob.style.translate=(headPose.yaw/100*limit)+'px '+(-headPose.pitch/100*limit)+'px'}setBasicState('头部姿态已调整')}
-function moveHeadJoystick(e){const knob=document.querySelector('[data-head-joystick]');if(!knob||knob.disabled)return;const box=knob.parentElement.getBoundingClientRect(),limit=box.width*.23;let {x,y}=remotePointerOffset(e,knob.parentElement);const d=Math.hypot(x,y);if(d>limit){x*=limit/d;y*=limit/d}headPose={yaw:Math.round(x/limit*100),pitch:Math.round(-y/limit*100)};updateHeadControl()}
-document.addEventListener('pointerdown',e=>{const knob=e.target.closest('[data-head-joystick]');if(!knob||knob.disabled)return;e.preventDefault();headPointer=e.pointerId;knob.setPointerCapture(e.pointerId);moveHeadJoystick(e)});
-document.addEventListener('pointermove',e=>{if(headPointer===e.pointerId)moveHeadJoystick(e)});
-function releaseHeadPointer(e){if(e?.type?.startsWith('pointer')&&e.pointerId!==headPointer)return;headPointer=null}document.addEventListener('pointerup',releaseHeadPointer);document.addEventListener('pointercancel',releaseHeadPointer);window.addEventListener('blur',releaseHeadPointer);window.addEventListener('resize',releaseHeadPointer);
-document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;if(b.hasAttribute('data-basic-stop')){releaseJoystick();releaseHeadPointer();if(page==='controller'){remoteLocked=true;mobileRender()}}if(b.dataset.speedGear){basicStop(false);travelSpeed=Number(b.dataset.speedGear);mobileRender()}if(b.hasAttribute('data-remote-start')){releaseJoystick();releaseHeadPointer();basicStop(false);remoteLocked=false;mobileRender()}if(b.dataset.poseStep){const d=b.dataset.poseStep;if(d==='left'||d==='right')headPose.yaw=Math.max(-100,Math.min(100,headPose.yaw+(d==='left'?-10:10)));else headPose.pitch=Math.max(-100,Math.min(100,headPose.pitch+(d==='down'?-10:10)));updateHeadControl()}});
+function remoteWalkFeedback() {
+  const forward = remoteWalk.forward > 0 ? '前进中' : remoteWalk.forward < 0 ? '后退中' : '';
+  const strafe = remoteWalk.strafe > 0 ? '右移中' : remoteWalk.strafe < 0 ? '左移中' : '';
+  const turn = remoteWalk.turn > 0 ? '右转中' : remoteWalk.turn < 0 ? '左转中' : '';
+  setBasicState([forward,strafe,turn].filter(Boolean).join(' · ') || '已停止');
+}
+
+function applyRemoteWalk(side, horizontal, vertical = 0) {
+  if (remoteControlMode !== 'walk' || mobileDriveDisabled() || remoteBody.posture === 'sitting') return;
+  if (side === 'left') {
+    remoteWalk.forward = vertical;
+    remoteWalk.strafe = horizontal;
+  } else {
+    remoteWalk.turn = horizontal;
+  }
+  clearTimeout(remoteWalkTimers[side]);
+  remoteWalkTimers[side] = horizontal || vertical ? setTimeout(() => releaseRemoteStick(side),5000) : null;
+  remoteWalkFeedback();
+}
+
+function updateRemotePose(side, horizontal, vertical = 0) {
+  if (remoteControlMode !== 'trunk' || mobileDriveDisabled()) return;
+  if (side === 'left') {
+    Object.assign(headPose, {yaw:horizontal, pitch:vertical});
+    const horizontalOutput = document.getElementById('remote-horizontal-value');
+    const verticalOutput = document.getElementById('remote-vertical-value');
+    if (horizontalOutput) horizontalOutput.textContent = horizontal + '%';
+    if (verticalOutput) verticalOutput.textContent = vertical + '%';
+    setBasicState('头部控制输入已更新');
+  } else {
+    trunkInput.twist = horizontal;
+    const twistOutput = document.getElementById('remote-twist-value');
+    if (twistOutput) twistOutput.textContent = horizontal + '%';
+    setBasicState('身躯扭动输入已更新');
+  }
+}
+
+function moveRemoteStick(side, event) {
+  const knob = document.querySelector(side === 'left' ? '[data-joystick]' : '[data-head-joystick]');
+  if (!knob || knob.disabled) return;
+  const pad = knob.parentElement;
+  let {x,y} = remotePointerOffset(event, pad);
+  const limit = pad.clientWidth * .24;
+  if (side === 'right') y = 0;
+  const distance = Math.hypot(x,y);
+  if (distance > limit) {
+    x *= limit / distance;
+    y *= limit / distance;
+  }
+  knob.style.translate = x + 'px ' + y + 'px';
+  pad.classList.toggle('engaged', distance >= 10);
+  if (remoteControlMode === 'walk') {
+    const horizontal = Math.abs(x / limit) < .15 ? 0 : x / limit;
+    const vertical = Math.abs(y / limit) < .15 ? 0 : -y / limit;
+    applyRemoteWalk(side,horizontal,vertical);
+  } else {
+    updateRemotePose(side,Math.round(x / limit * 100),Math.round(-y / limit * 100));
+  }
+}
+
+function releaseRemoteStick(side) {
+  clearTimeout(remoteWalkTimers[side]);
+  remoteWalkTimers[side] = null;
+  remotePointers[side] = null;
+  if (side === 'left') {
+    remoteWalk.forward = 0;
+    remoteWalk.strafe = 0;
+  } else {
+    remoteWalk.turn = 0;
+  }
+  const panel = document.querySelector('[data-remote-side="' + side + '"]');
+  panel?.querySelector('.rc-stick')?.style.removeProperty('translate');
+  panel?.querySelector('.rc-joystick')?.classList.remove('engaged');
+  panel?.querySelectorAll('.pressed').forEach(button => button.classList.remove('pressed'));
+  if (page === 'controller' && remoteControlMode === 'walk') remoteWalkFeedback();
+}
+function releaseJoystick() { releaseRemoteStick('left'); }
+function releaseHeadPointer() { releaseRemoteStick('right'); }
+
+function runRemoteDirection(button) {
+  const side = button.closest('[data-remote-side]').dataset.remoteSide;
+  if (button.dataset.drive) {
+    const direction = button.dataset.drive;
+    const horizontal = ['right','strafe_right'].includes(direction) ? 1 : ['left','strafe_left'].includes(direction) ? -1 : 0;
+    const vertical = direction === 'forward' ? 1 : direction === 'backward' ? -1 : 0;
+    applyRemoteWalk(side,horizontal,vertical);
+  } else {
+    const horizontal = side === 'left' ? headPose.yaw : trunkInput.twist;
+    const vertical = side === 'left' ? headPose.pitch : 0;
+    const direction = button.dataset.poseStep;
+    const x = horizontal + (direction === 'left' ? -10 : direction === 'right' ? 10 : 0);
+    const y = vertical + (direction === 'down' ? -10 : direction === 'up' ? 10 : 0);
+    updateRemotePose(side,Math.max(-100,Math.min(100,x)),Math.max(-100,Math.min(100,y)));
+  }
+  button.classList.add('pressed');
+}
+
+document.addEventListener('pointerdown', event => {
+  const button = event.target.closest('[data-joystick],[data-head-joystick],[data-drive],[data-pose-step]');
+  if (!button || button.disabled) return;
+  event.preventDefault();
+  const side = button.closest('[data-remote-side]').dataset.remoteSide;
+  const dragging = button.hasAttribute('data-joystick') || button.hasAttribute('data-head-joystick');
+  remotePointers[side] = {id:event.pointerId, dragging};
+  button.setPointerCapture(event.pointerId);
+  if (dragging) moveRemoteStick(side,event);
+  else runRemoteDirection(button);
+});
+document.addEventListener('pointermove', event => {
+  for (const side of ['left','right']) {
+    if (remotePointers[side]?.id === event.pointerId && remotePointers[side].dragging) moveRemoteStick(side,event);
+  }
+});
+document.addEventListener('pointerup', event => {
+  for (const side of ['left','right']) {
+    if (remotePointers[side]?.id === event.pointerId) releaseRemoteStick(side);
+  }
+});
+document.addEventListener('click', event => {
+  const button = event.target.closest('button');
+  if (!button || button.disabled) return;
+  if (button.hasAttribute('data-basic-stop')) {
+    releaseJoystick();
+    releaseHeadPointer();
+    if (page === 'controller') mobileRender();
+  }
+  if (button.dataset.speedGear) {
+    basicStop(false);
+    travelSpeed = Number(button.dataset.speedGear);
+    mobileRender();
+  }
+  if (event.detail === 0 && (button.dataset.drive || button.dataset.poseStep)) {
+    runRemoteDirection(button);
+    const side = button.closest('[data-remote-side]').dataset.remoteSide;
+    clearTimeout(remoteWalkTimers[side]);
+    remoteWalkTimers[side] = setTimeout(() => releaseRemoteStick(side),350);
+  }
+});
+window.addEventListener('resize',()=>{if(page==='controller')basicStop(false)});
 
 document.addEventListener('click', event => {
   if (event.target.closest('[data-enroll-signout]')) {
